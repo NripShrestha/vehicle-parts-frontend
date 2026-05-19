@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5051/api"; // Updated to HTTPS to bypass 307 redirection
+const API_BASE_URL = "http://localhost:5051/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -64,6 +64,7 @@ export const salesService = {
   createInvoice: (data) => api.post("/SalesInvoice", data),
   getAllInvoices: () => api.get("/SalesInvoice"),
   getInvoice: (id) => api.get(`/SalesInvoice/${id}`),
+  updatePayment: (id, data) => api.put(`/SalesInvoice/${id}/payment`, data),
   sendEmail: (id) => api.post(`/SalesInvoice/${id}/send-email`),
 };
 
@@ -74,9 +75,13 @@ export const purchasesService = {
 };
 
 export const customerSelfServiceService = {
+  getProfile: () => api.get("/customer-self-service/profile"),
+  updateProfile: (data) => api.put("/customer-self-service/profile", data),
   getHistory: () => api.get("/customer-self-service/history"),
   getVehicles: () => api.get("/customer-self-service/vehicles"),
   registerVehicle: (data) => api.post("/customer-self-service/vehicles", data),
+  updateVehicle: (id, data) => api.put(`/customer-self-service/vehicles/${id}`, data),
+  deleteVehicle: (id) => api.delete(`/customer-self-service/vehicles/${id}`),
   bookAppointment: (data) => api.post("/customer-self-service/appointments", data),
   getAppointments: () => api.get("/customer-self-service/appointments"),
   cancelAppointment: (id) => api.put(`/customer-self-service/appointments/${id}/cancel`),
@@ -84,6 +89,17 @@ export const customerSelfServiceService = {
   getReviews: () => api.get("/customer-self-service/reviews"),
   requestPart: (data) => api.post("/customer-self-service/part-requests", data),
   getPartRequests: () => api.get("/customer-self-service/part-requests"),
+};
+
+export const reportService = {
+  getDailyFinancial: () => api.get("/Reports/financial/daily"),
+  getMonthlyFinancial: () => api.get("/Reports/financial/monthly"),
+  getYearlyFinancial: () => api.get("/Reports/financial/yearly"),
+  getFinancialSummary: () => api.get("/Reports/financial/summary"),
+  getRegularCustomers: () => api.get("/Reports/regular-customers"),
+  getTopSpenders: () => api.get("/Reports/top-spenders"),
+  getPendingCredits: () => api.get("/Reports/pending-credits"),
+  triggerNotifications: () => api.post("/Reports/trigger-notifications"),
 };
 
 export default api;

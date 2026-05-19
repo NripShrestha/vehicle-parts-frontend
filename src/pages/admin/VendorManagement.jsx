@@ -48,6 +48,7 @@ const VendorManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingVendorId, setEditingVendorId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     vendorName: "",
@@ -78,8 +79,13 @@ const VendorManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await vendorService.create(formData);
+      if (editingVendorId) {
+        await vendorService.update(editingVendorId, formData);
+      } else {
+        await vendorService.create(formData);
+      }
       setShowAddForm(false);
+      setEditingVendorId(null);
       fetchVendors();
       setFormData({
         vendorName: "",
@@ -90,6 +96,28 @@ const VendorManagement = () => {
     } catch (error) {
       alert("Error creating vendor");
     }
+  };
+
+  const handleEdit = (vendor) => {
+    setEditingVendorId(vendor.vendorID);
+    setFormData({
+      vendorName: vendor.vendorName || "",
+      vendorPhone: vendor.vendorPhone || "",
+      vendorEmail: vendor.vendorEmail || "",
+      vendorAddress: vendor.vendorAddress || "",
+    });
+    setShowAddForm(true);
+  };
+
+  const resetForm = () => {
+    setEditingVendorId(null);
+    setFormData({
+      vendorName: "",
+      vendorPhone: "",
+      vendorEmail: "",
+      vendorAddress: "",
+    });
+    setShowAddForm(false);
   };
 
   const handleDelete = async (id) => {
@@ -127,7 +155,7 @@ const VendorManagement = () => {
           </button>
           <button
             className={`px-10 py-4 rounded-full font-oswald font-bold uppercase tracking-widest text-[10px] flex items-center gap-3 transition-all shadow-2xl transform active:scale-95 ${showAddForm ? "bg-[#111111] text-white hover:bg-black" : "bg-[#fcd20b] text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b]"}`}
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => (showAddForm ? resetForm() : setShowAddForm(true))}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
             {showAddForm ? "CLOSE FORM" : "ADD NEW SUPPLIER"}
@@ -149,10 +177,11 @@ const VendorManagement = () => {
           <div className="bg-[#111111] p-10 flex justify-between items-center text-white">
             <h3 className="font-bold m-0 font-oswald italic uppercase tracking-tighter text-2xl flex items-center gap-4">
               <Zap size={24} className="text-[#fcd20b]" />
-              REGISTER <span className="text-[#fcd20b]">NEW SUPPLIER</span>
+              {editingVendorId ? "UPDATE" : "REGISTER"}{" "}
+              <span className="text-[#fcd20b]">SUPPLIER</span>
             </h3>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={resetForm}
               className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-rose-500 transition-all"
             >
               <X size={20} />
@@ -219,7 +248,7 @@ const VendorManagement = () => {
             <div className="flex justify-end gap-5 mt-12 border-t border-black/5 pt-10">
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
+                onClick={resetForm}
                 className="px-10 py-4 rounded-full bg-[#f8f8f8] text-[#7a7a7a] font-bold text-[10px] uppercase tracking-widest hover:bg-[#111111] hover:text-white transition-all font-oswald"
               >
                 CANCEL
@@ -228,7 +257,7 @@ const VendorManagement = () => {
                 type="submit"
                 className="px-12 py-4 rounded-full bg-[#fcd20b] text-[#111111] font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#fcd20b]/20 hover:bg-[#111111] hover:text-[#fcd20b] transition-all active:scale-95 font-oswald italic"
               >
-                ADD SUPPLIER
+                {editingVendorId ? "UPDATE SUPPLIER" : "ADD SUPPLIER"}
               </button>
             </div>
           </form>
@@ -354,7 +383,10 @@ const VendorManagement = () => {
                     </td>
                     <td className="pr-10 py-8 border-b border-black/5 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                        <button className="w-10 h-10 rounded-xl bg-white text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b] border border-black/5 transition-all shadow-sm flex items-center justify-center">
+                        <button
+                          onClick={() => handleEdit(vendor)}
+                          className="w-10 h-10 rounded-xl bg-white text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b] border border-black/5 transition-all shadow-sm flex items-center justify-center"
+                        >
                           <Edit2 size={16} />
                         </button>
                         <button

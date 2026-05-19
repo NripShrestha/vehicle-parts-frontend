@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -33,6 +33,50 @@ import Settings from "./pages/common/Settings";
 import Notifications from "./pages/common/Notifications";
 import MenuOverview from "./pages/common/MenuOverview";
 
+const SCREEN_ROUTES = {
+  Financial: { path: "/admin/financial", roles: ["admin"] },
+  Staff: { path: "/admin/staff", roles: ["admin"] },
+  Parts: { path: "/admin/parts", roles: ["admin"] },
+  Purchases: { path: "/admin/purchases", roles: ["admin"] },
+  Vendors: { path: "/admin/vendors", roles: ["admin"] },
+  StaffDash: { path: "/staff/dashboard", roles: ["staff"] },
+  Registration: { path: "/staff/customers/new", roles: ["staff"] },
+  SalesInvoice: { path: "/staff/sales-invoice", roles: ["staff"] },
+  CustomerSearch: { path: "/staff/customers", roles: ["staff"] },
+  CustomerDetails: { path: "/staff/customers/details", roles: ["staff"] },
+  CustomerReports: { path: "/staff/reports", roles: ["staff"] },
+  EmailInvoice: { path: "/staff/email-invoice", roles: ["staff"] },
+  CustomerDash: { path: "/customer/dashboard", roles: ["customer"] },
+  History: { path: "/customer/history", roles: ["customer"] },
+  Appointments: { path: "/customer/appointments", roles: ["customer"] },
+  Marketplace: { path: "/customer/marketplace", roles: ["customer"] },
+  AssetDetails: { path: "/customer/asset-details", roles: ["customer"] },
+  Profile: { path: "/profile" },
+  Settings: { path: "/settings" },
+  Notifications: { path: "/notifications" },
+  MenuOverview: { path: "/menu" },
+};
+
+const getDefaultScreen = (role) => {
+  const normalizedRole = role?.toLowerCase();
+  if (normalizedRole === "admin") return "Financial";
+  if (normalizedRole === "staff") return "StaffDash";
+  if (normalizedRole === "customer") return "CustomerDash";
+  return "Financial";
+};
+
+const getScreenFromPath = (pathname) => {
+  return Object.entries(SCREEN_ROUTES).find(
+    ([, route]) => route.path === pathname,
+  )?.[0];
+};
+
+const isScreenAllowed = (screen, role) => {
+  const route = SCREEN_ROUTES[screen];
+  const normalizedRole = role?.toLowerCase();
+  return Boolean(route && (!route.roles || route.roles.includes(normalizedRole)));
+};
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,34 +88,76 @@ const App = () => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       const parsedUser = JSON.parse(savedUser);
+      const routeScreen = getScreenFromPath(window.location.pathname);
+      const nextScreen =
+        routeScreen && isScreenAllowed(routeScreen, parsedUser.role)
+          ? routeScreen
+          : getDefaultScreen(parsedUser.role);
+
       setUser(parsedUser);
-      // Set default screen based on role
-      setDefaultScreen(parsedUser.role);
+      setActiveScreen(nextScreen);
+
+      if (!routeScreen || !isScreenAllowed(routeScreen, parsedUser.role)) {
+        window.history.replaceState(null, "", SCREEN_ROUTES[nextScreen].path);
+      }
     }
     setLoading(false);
   }, []);
 
-  const setDefaultScreen = (role) => {
-    const normalizedRole = role?.toLowerCase();
-    if (normalizedRole === "admin") setActiveScreen("Financial");
-    else if (normalizedRole === "staff") setActiveScreen("StaffDash");
-    else if (normalizedRole === "customer") setActiveScreen("CustomerDash");
-  };
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const handlePopState = () => {
+      const routeScreen = getScreenFromPath(window.location.pathname);
+      const nextScreen =
+        routeScreen && isScreenAllowed(routeScreen, user.role)
+          ? routeScreen
+          : getDefaultScreen(user.role);
+      setActiveScreen(nextScreen);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [user]);
+
+  const navigateToScreen = useCallback(
+    (screen, options = {}) => {
+      if (!user) return;
+
+      const nextScreen = isScreenAllowed(screen, user.role)
+        ? screen
+        : getDefaultScreen(user.role);
+      const path = SCREEN_ROUTES[nextScreen]?.path || "/";
+
+      setActiveScreen(nextScreen);
+
+      if (window.location.pathname !== path) {
+        const historyMethod = options.replace ? "replaceState" : "pushState";
+        window.history[historyMethod](null, "", path);
+      }
+    },
+    [user],
+  );
 
   const handleLogin = (userData) => {
+    const nextScreen = getDefaultScreen(userData.role);
     setUser(userData);
-    setDefaultScreen(userData.role);
+    setActiveScreen(nextScreen);
+    window.history.replaceState(null, "", SCREEN_ROUTES[nextScreen].path);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
+    setSelectedAsset(null);
+    setSelectedCustomerId(null);
+    window.history.replaceState(null, "", "/login");
   };
 
   const handleExploreAsset = (asset) => {
     setSelectedAsset(asset);
-    setActiveScreen("AssetDetails");
+    navigateToScreen("AssetDetails");
   };
 
   const renderScreen = () => {
@@ -90,7 +176,7 @@ const App = () => {
 
       // Staff
       case "StaffDash":
-        return <StaffDashboard setActiveScreen={setActiveScreen} />;
+        return <StaffDashboard setActiveScreen={navigateToScreen} />;
       case "Registration":
         return <CustomerRegistration />;
       case "SalesInvoice":
@@ -98,7 +184,7 @@ const App = () => {
       case "CustomerSearch":
         return (
           <CustomerSearch
-            setActiveScreen={setActiveScreen}
+            setActiveScreen={navigateToScreen}
             setSelectedCustomerId={setSelectedCustomerId}
           />
         );
@@ -116,7 +202,7 @@ const App = () => {
 
       // Customer
       case "CustomerDash":
-        return <CustomerDashboard user={user} setActiveScreen={setActiveScreen} />;
+        return <CustomerDashboard user={user} setActiveScreen={navigateToScreen} />;
       case "History":
         return <PurchaseHistory user={user} />;
       case "Appointments":
@@ -124,11 +210,13 @@ const App = () => {
       case "Marketplace":
         return <BuySell onExploreAsset={handleExploreAsset} />;
       case "AssetDetails":
-        return (
+        return selectedAsset ? (
           <AssetDetails
             asset={selectedAsset}
-            onBack={() => setActiveScreen("Marketplace")}
+            onBack={() => navigateToScreen("Marketplace")}
           />
+        ) : (
+          <BuySell onExploreAsset={handleExploreAsset} />
         );
 
       // Common
@@ -137,9 +225,9 @@ const App = () => {
       case "Settings":
         return <Settings />;
       case "Notifications":
-        return <Notifications />;
+        return <Notifications user={user} />;
       case "MenuOverview":
-        return <MenuOverview setActiveScreen={setActiveScreen} />;
+        return <MenuOverview setActiveScreen={navigateToScreen} />;
 
       default:
         return (
@@ -166,7 +254,7 @@ const App = () => {
     <div className="flex min-h-screen bg-[#f8f8f8] overflow-x-hidden font-roboto">
       <Sidebar
         activeScreen={activeScreen}
-        setActiveScreen={setActiveScreen}
+        setActiveScreen={navigateToScreen}
         userRole={user.role}
         onLogout={handleLogout}
       />
@@ -174,7 +262,7 @@ const App = () => {
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-[300px]">
         <Navbar
           activeScreen={activeScreen}
-          setActiveScreen={setActiveScreen}
+          setActiveScreen={navigateToScreen}
           user={user}
         />
 

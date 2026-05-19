@@ -46,7 +46,7 @@ const Pagination = ({ totalItems = 0, itemsPerPage = 10, currentPage = 1 }) => {
         </button>
 
         <div style={{ display: "flex", gap: "4px" }}>
-          {[1, 2, 3].map((page) => (
+          {Array.from({ length: Math.min(totalPages, 3) }, (_, index) => index + 1).map((page) => (
             <button
               key={page}
               style={{
@@ -68,7 +68,14 @@ const Pagination = ({ totalItems = 0, itemsPerPage = 10, currentPage = 1 }) => {
           ))}
         </div>
 
-        <button className="btn btn-secondary" style={{ padding: "6px 12px" }}>
+        <button
+          className="btn btn-secondary"
+          style={{
+            padding: "6px 12px",
+            opacity: currentPage >= totalPages ? 0.5 : 1,
+            cursor: currentPage >= totalPages ? "not-allowed" : "pointer",
+          }}
+        >
           Next
           <ChevronRight size={16} />
         </button>

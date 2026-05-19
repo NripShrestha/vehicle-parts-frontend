@@ -14,7 +14,7 @@ import {
   Activity,
   Award,
 } from "lucide-react";
-import { customerService, salesService } from "../../services/api";
+import { customerService, reportService } from "../../services/api";
 
 const CustomerReports = () => {
   const [loading, setLoading] = useState(true);
@@ -34,58 +34,43 @@ const CustomerReports = () => {
 
   const loadReportData = async () => {
     try {
-      const [custRes, salesRes] = await Promise.all([
+      const [custRes, topRes, regularRes, creditRes] = await Promise.all([
         customerService.getAll(),
-        salesService.getAllInvoices(),
+        reportService.getTopSpenders(),
+        reportService.getRegularCustomers(),
+        reportService.getPendingCredits(),
       ]);
 
       const customers = custRes.data;
-      const invoices = salesRes.data;
+      const highSpenders = (topRes.data || []).map((row) => ({
+        id: row.customerID,
+        name: row.fullName || "Unknown",
+        email: row.email || "N/A",
+        phone: row.phoneNumber || "N/A",
+        spent: row.totalSpent || 0,
+        visits: row.purchaseCount || 0,
+        creditBalance: row.creditBalance || 0,
+      }));
+      const regulars = (regularRes.data || []).map((row) => ({
+        id: row.customerID,
+        name: row.fullName || "Unknown",
+        email: row.email || "N/A",
+        phone: row.phoneNumber || "N/A",
+        spent: row.totalSpent || 0,
+        visits: row.purchaseCount || 0,
+        creditBalance: row.creditBalance || 0,
+      }));
+      const pendingCredits = (creditRes.data || []).map((row) => ({
+        id: row.customerID,
+        name: row.fullName || "Unknown",
+        email: row.email || "N/A",
+        phone: row.phoneNumber || "N/A",
+        spent: row.totalSpent || 0,
+        visits: row.purchaseCount || 0,
+        creditBalance: row.creditBalance || 0,
+      }));
 
-      // Initialize spend map with all customers to preserve their details (such as CreditBalance)
-      const customerSpendMap = {};
-      customers.forEach((c) => {
-        customerSpendMap[c.customerID] = {
-          id: c.customerID,
-          name: c.fullName || "Unknown",
-          email: c.email || "N/A",
-          phone: c.phoneNumber || "N/A",
-          spent: 0,
-          visits: 0,
-          creditBalance: c.creditBalance || 0,
-        };
-      });
-
-      invoices.forEach((inv) => {
-        if (customerSpendMap[inv.customerID]) {
-          customerSpendMap[inv.customerID].spent += inv.totalAmount;
-          customerSpendMap[inv.customerID].visits += 1;
-        }
-      });
-
-      const allCustomersList = Object.values(customerSpendMap);
-
-      // 1. High Spenders (Sorted by spent descending)
-      const highSpenders = [...allCustomersList]
-        .filter((c) => c.spent > 0)
-        .sort((a, b) => b.spent - a.spent)
-        .slice(0, 10);
-
-      // 2. Regular Customers (Sorted by visit count descending)
-      const regulars = [...allCustomersList]
-        .filter((c) => c.visits > 0)
-        .sort((a, b) => b.visits - a.visits)
-        .slice(0, 10);
-
-      // 3. Pending Credits (Filtered by credit balance > 0)
-      const pendingCredits = allCustomersList
-        .filter((c) => c.creditBalance > 0)
-        .sort((a, b) => b.creditBalance - a.creditBalance);
-
-      const totalRevenue = invoices.reduce(
-        (acc, inv) => acc + inv.totalAmount,
-        0,
-      );
+      const totalRevenue = highSpenders.reduce((acc, row) => acc + row.spent, 0);
 
       setData({
         totalCustomers: customers.length,

@@ -36,6 +36,23 @@ const CustomerDetails = ({ customerId, onBack }) => {
       setCustomer(response.data);
     } catch (error) {
       console.error("Error fetching customer details:", error);
+      try {
+        const response = await customerService.getAll();
+        const basicCustomer = response.data.find(
+          (item) => item.customerID === customerId,
+        );
+
+        if (basicCustomer) {
+          setCustomer({
+            ...basicCustomer,
+            totalSpent: 0,
+            totalInvoices: 0,
+            salesHistory: [],
+          });
+        }
+      } catch (fallbackError) {
+        console.error("Error fetching basic customer profile:", fallbackError);
+      }
     } finally {
       setLoading(false);
     }
@@ -229,7 +246,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
                   </p>
                 </div>
                 ) : (
-                  customer.vehicles.map((vehicle, i) => (
+                  customer.vehicles.map((vehicle) => (
                     <div
                       key={vehicle.vehicleID}
                       className="p-8 rounded-[2rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-2xl hover:border-blue-100 transition-all cursor-pointer group relative overflow-hidden"
@@ -313,7 +330,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
                       </td>
                     </tr>
                   ) : (
-                    customer.salesHistory.map((row, i) => (
+                    customer.salesHistory.map((row) => (
                       <tr
                         key={row.salesInvoiceID}
                         className="hover:bg-slate-50/50 transition-colors group"

@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import {
   salesService,
-  staffService,
   vendorService,
   partsService,
+  reportService,
 } from "../../services/api";
 
 const StatCard = ({ title, value, change, isPositive, icon: Icon }) => (
@@ -67,6 +67,8 @@ const FinancialDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     dailyRevenue: 0,
+    monthlyRevenue: 0,
+    yearlyRevenue: 0,
     newOrders: 0,
     activeVendors: 0,
     inventoryValue: 0,
@@ -79,32 +81,29 @@ const FinancialDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [salesRes, staffRes, vendorRes, partsRes] = await Promise.all([
+      const [summaryRes, salesRes, vendorRes, partsRes] = await Promise.all([
+        reportService.getFinancialSummary(),
         salesService.getAllInvoices(),
-        staffService.getAll(),
         vendorService.getAll(),
         partsService.getAll(),
       ]);
 
       const sales = salesRes.data;
-      const today = new Date().toLocaleDateString();
-      const dailySales = sales.filter(
-        (s) => new Date(s.invoiceDate).toLocaleDateString() === today,
-      );
-
-      const totalRevenue = dailyBySum(dailySales);
+      const summary = summaryRes.data || {};
       const inventoryValue = partsRes.data.reduce(
         (acc, p) => acc + p.sellingPrice * p.stockQuantity,
         0,
       );
 
       setStats({
-        dailyRevenue: totalRevenue,
-        newOrders: sales.length,
+        dailyRevenue: summary.daily?.totalRevenue || 0,
+        monthlyRevenue: summary.monthly?.totalRevenue || 0,
+        yearlyRevenue: summary.yearly?.totalRevenue || 0,
+        newOrders: summary.monthly?.totalSalesCount || sales.length,
         activeVendors: vendorRes.data.length,
         inventoryValue: inventoryValue,
         recentTransactions: sales.slice(0, 5).map((s) => ({
-          id: `#INV-${s.invoiceID}`,
+          id: `#INV-${s.salesInvoiceID}`,
           desc: `TRANSACTION WITH ${s.customerName.toUpperCase()}`,
           date: new Date(s.invoiceDate).toLocaleDateString(),
           amount: `+$${s.totalAmount.toLocaleString()}`,
@@ -117,9 +116,6 @@ const FinancialDashboard = () => {
       setLoading(false);
     }
   };
-
-  const dailyBySum = (items) =>
-    items.reduce((acc, item) => acc + item.totalAmount, 0);
 
   if (loading) {
     return (
@@ -164,7 +160,21 @@ const FinancialDashboard = () => {
           icon={DollarSign}
         />
         <StatCard
-          title="TOTAL ORDERS"
+          title="MONTHLY REVENUE"
+          value={`$${stats.monthlyRevenue.toLocaleString()}`}
+          change="+12.8%"
+          isPositive={true}
+          icon={ShoppingBag}
+        />
+        <StatCard
+          title="YEARLY REVENUE"
+          value={`$${stats.yearlyRevenue.toLocaleString()}`}
+          change="+5.4%"
+          isPositive={true}
+          icon={TrendingUp}
+        />
+        <StatCard
+          title="MONTHLY ORDERS"
           value={stats.newOrders}
           change="+12.8%"
           isPositive={true}

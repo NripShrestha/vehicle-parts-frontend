@@ -51,6 +51,7 @@ const PartsManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingPartId, setEditingPartId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     PartName: "",
@@ -98,10 +99,16 @@ const PartsManagement = () => {
     try {
       const submissionData = {
         ...formData,
+        PartID: editingPartId || 0,
         VendorID: parseInt(formData.VendorID),
       };
-      await partsService.create(submissionData);
+      if (editingPartId) {
+        await partsService.update(editingPartId, submissionData);
+      } else {
+        await partsService.create(submissionData);
+      }
       setShowAddForm(false);
+      setEditingPartId(null);
       fetchData();
       setFormData({
         PartName: "",
@@ -118,6 +125,34 @@ const PartsManagement = () => {
         : "Critical system failure during asset registration.";
       alert("Validation Error:\n" + errorMsg);
     }
+  };
+
+  const resetForm = () => {
+    setEditingPartId(null);
+    setShowAddForm(false);
+    setFormData({
+      PartName: "",
+      Category: "Engine Components",
+      SellingPrice: 0,
+      CostPrice: 0,
+      StockQuantity: 0,
+      ReorderLevel: 10,
+      VendorID: "",
+    });
+  };
+
+  const handleEdit = (part) => {
+    setEditingPartId(part.partID);
+    setFormData({
+      PartName: part.partName || "",
+      Category: part.category || "Engine Components",
+      SellingPrice: part.sellingPrice || 0,
+      CostPrice: part.costPrice || 0,
+      StockQuantity: part.stockQuantity || 0,
+      ReorderLevel: part.reorderLevel || 10,
+      VendorID: String(part.vendorID || ""),
+    });
+    setShowAddForm(true);
   };
 
   const handleDelete = async (id) => {
@@ -168,7 +203,7 @@ const PartsManagement = () => {
           </button>
           <button
             className={`px-10 py-4 rounded-full font-oswald font-bold uppercase tracking-widest text-[10px] flex items-center gap-3 transition-all shadow-2xl transform active:scale-95 ${showAddForm ? "bg-[#111111] text-white hover:bg-black" : "bg-[#fcd20b] text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b]"}`}
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => (showAddForm ? resetForm() : setShowAddForm(true))}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
             {showAddForm ? "CLOSE FORM" : "ADD NEW PART"}
@@ -197,10 +232,11 @@ const PartsManagement = () => {
           <div className="bg-[#111111] p-10 flex justify-between items-center text-white">
             <h3 className="font-bold m-0 font-oswald italic uppercase tracking-tighter text-2xl flex items-center gap-4">
               <Zap size={24} className="text-[#fcd20b]" />
-              INITIALIZE <span className="text-[#fcd20b]">NEW PRODUCT</span>
+              {editingPartId ? "UPDATE" : "INITIALIZE"}{" "}
+              <span className="text-[#fcd20b]">PRODUCT</span>
             </h3>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={resetForm}
               className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-rose-500 transition-all"
             >
               <X size={20} />
@@ -333,7 +369,7 @@ const PartsManagement = () => {
             <div className="flex justify-end gap-5 mt-12 border-t border-black/5 pt-10">
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
+                onClick={resetForm}
                 className="px-10 py-4 rounded-full bg-[#f8f8f8] text-[#7a7a7a] font-bold text-[10px] uppercase tracking-widest hover:bg-[#111111] hover:text-white transition-all font-oswald"
               >
                 DISCARD CHANGES
@@ -342,7 +378,7 @@ const PartsManagement = () => {
                 type="submit"
                 className="px-12 py-4 rounded-full bg-[#fcd20b] text-[#111111] font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#fcd20b]/20 hover:bg-[#111111] hover:text-[#fcd20b] transition-all active:scale-95 font-oswald italic"
               >
-                PUBLISH TO CATALOG
+                {editingPartId ? "UPDATE CATALOG ITEM" : "PUBLISH TO CATALOG"}
               </button>
             </div>
           </form>
@@ -471,7 +507,10 @@ const PartsManagement = () => {
                     </td>
                     <td className="pr-10 py-8 border-b border-black/5 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-                        <button className="w-10 h-10 rounded-xl bg-white text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b] border border-black/5 transition-all shadow-sm flex items-center justify-center">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="w-10 h-10 rounded-xl bg-white text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b] border border-black/5 transition-all shadow-sm flex items-center justify-center"
+                        >
                           <Edit2 size={16} />
                         </button>
                         <button

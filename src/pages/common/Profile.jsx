@@ -19,8 +19,16 @@ import { customerSelfServiceService } from "../../services/api";
 
 const Profile = ({ user }) => {
   const [reviews, setReviews] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [profileForm, setProfileForm] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    address: "",
+  });
   const [loading, setLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   
@@ -29,6 +37,23 @@ const Profile = ({ user }) => {
   const [comment, setComment] = useState("");
 
   const isCustomer = user?.role?.toLowerCase() === "customer";
+
+  const fetchProfile = async () => {
+    if (!isCustomer) return;
+    try {
+      const response = await customerSelfServiceService.getProfile();
+      const nextProfile = response.data || {};
+      setProfile(nextProfile);
+      setProfileForm({
+        fullName: nextProfile.fullName || "",
+        email: nextProfile.email || "",
+        phoneNumber: nextProfile.phoneNumber || "",
+        address: nextProfile.address || "",
+      });
+    } catch (err) {
+      console.error("Failed to load customer profile:", err);
+    }
+  };
 
   const fetchReviews = async () => {
     if (!isCustomer) return;
@@ -44,8 +69,46 @@ const Profile = ({ user }) => {
   };
 
   useEffect(() => {
+    fetchProfile();
     fetchReviews();
   }, [user]);
+
+  const handleProfileChange = (e) => {
+    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    try {
+      setProfileSaving(true);
+      const response = await customerSelfServiceService.updateProfile(profileForm);
+      const nextProfile = response.data;
+      setProfile(nextProfile);
+      setProfileForm({
+        fullName: nextProfile.fullName || "",
+        email: nextProfile.email || "",
+        phoneNumber: nextProfile.phoneNumber || "",
+        address: nextProfile.address || "",
+      });
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const nextUser = {
+        ...savedUser,
+        fullName: nextProfile.fullName,
+        email: nextProfile.email,
+        phoneNumber: nextProfile.phoneNumber,
+        address: nextProfile.address,
+      };
+      localStorage.setItem("user", JSON.stringify(nextUser));
+      setSuccess("Profile updated successfully.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update profile.");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -98,8 +161,13 @@ const Profile = ({ user }) => {
     },
   ];
 
-  const initials = user?.fullName
-    ? user.fullName
+  const displayUser = {
+    ...user,
+    ...profile,
+  };
+
+  const initials = displayUser?.fullName
+    ? displayUser.fullName
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -137,7 +205,7 @@ const Profile = ({ user }) => {
 
               <div className="text-center mb-6">
                 <h2 className="text-xl font-black m-0 mb-1 text-slate-800 tracking-tight leading-tight">
-                  {user?.fullName}
+                  {displayUser?.fullName}
                 </h2>
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
                   System {user?.role}
@@ -156,18 +224,18 @@ const Profile = ({ user }) => {
                 <div className="flex flex-col gap-3 text-xs font-semibold text-slate-600">
                   <div className="flex items-center gap-3">
                     <Mail size={16} className="text-slate-400 shrink-0" />
-                    <span className="truncate">{user?.email}</span>
+                    <span className="truncate">{displayUser?.email}</span>
                   </div>
-                  {user?.phoneNumber && (
+                  {displayUser?.phoneNumber && (
                     <div className="flex items-center gap-3">
                       <Smartphone size={16} className="text-slate-400 shrink-0" />
-                      <span>{user.phoneNumber}</span>
+                      <span>{displayUser.phoneNumber}</span>
                     </div>
                   )}
-                  {user?.address && (
+                  {displayUser?.address && (
                     <div className="flex items-center gap-3">
                       <MapPin size={16} className="text-slate-400 shrink-0" />
-                      <span className="truncate">{user.address}</span>
+                      <span className="truncate">{displayUser.address}</span>
                     </div>
                   )}
                 </div>
@@ -179,6 +247,84 @@ const Profile = ({ user }) => {
               {isCustomer ? (
                 /* Customer Feedback & Reviews Sourced Live */
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="md:col-span-2 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-2 mb-4">
+                      <User size={18} className="text-blue-500" />
+                      <h4 className="m-0 text-sm font-black text-slate-800 uppercase tracking-wider">
+                        Customer Profile Details
+                      </h4>
+                    </div>
+
+                    <form
+                      onSubmit={handleProfileSubmit}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                          Full Name
+                        </span>
+                        <input
+                          name="fullName"
+                          value={profileForm.fullName}
+                          onChange={handleProfileChange}
+                          required
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-xs font-bold text-slate-800 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                          Email
+                        </span>
+                        <input
+                          type="email"
+                          name="email"
+                          value={profileForm.email}
+                          onChange={handleProfileChange}
+                          required
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-xs font-bold text-slate-800 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                          Phone
+                        </span>
+                        <input
+                          name="phoneNumber"
+                          value={profileForm.phoneNumber}
+                          onChange={handleProfileChange}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-xs font-bold text-slate-800 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                          Address
+                        </span>
+                        <input
+                          name="address"
+                          value={profileForm.address}
+                          onChange={handleProfileChange}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-xs font-bold text-slate-800 transition-all"
+                        />
+                      </div>
+                      <div className="md:col-span-2 flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={profileSaving}
+                          className="px-6 py-3 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all shadow-md disabled:opacity-75"
+                        >
+                          {profileSaving ? (
+                            <div className="flex items-center gap-2">
+                              <Loader2 size={14} className="animate-spin" />
+                              Saving...
+                            </div>
+                          ) : (
+                            "Save Profile"
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
                   {/* Feedback Form */}
                   <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-2 mb-4">

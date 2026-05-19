@@ -47,6 +47,7 @@ const StaffManagement = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingStaffId, setEditingStaffId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [formData, setFormData] = useState({
@@ -82,25 +83,58 @@ const StaffManagement = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await staffService.create(formData);
-      setSuccessMsg("Personnel profile synchronized successfully.");
+      if (editingStaffId) {
+        await staffService.update(editingStaffId, {
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
+          staffPosition: formData.staffPosition,
+          role: formData.role,
+        });
+      } else {
+        await staffService.create(formData);
+      }
+      setSuccessMsg(
+        editingStaffId
+          ? "Personnel profile updated successfully."
+          : "Personnel profile synchronized successfully.",
+      );
       setTimeout(() => setSuccessMsg(""), 5000);
-      setShowAddForm(false);
+      resetForm();
       fetchStaff();
-      setFormData({
-        fullName: "",
-        email: "",
-        password: "",
-        phoneNumber: "",
-        address: "",
-        staffPosition: "Inventory Manager",
-        role: "Staff",
-      });
     } catch (error) {
       alert(error.response?.data || "Error creating staff");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setEditingStaffId(null);
+    setShowAddForm(false);
+    setFormData({
+      fullName: "",
+      email: "",
+      password: "",
+      phoneNumber: "",
+      address: "",
+      staffPosition: "Inventory Manager",
+      role: "Staff",
+    });
+  };
+
+  const handleEdit = (staff) => {
+    setEditingStaffId(staff.id);
+    setFormData({
+      fullName: staff.fullName || "",
+      email: staff.email || "",
+      password: "",
+      phoneNumber: staff.phoneNumber || "",
+      address: staff.address || "",
+      staffPosition: staff.staffPosition || "Inventory Manager",
+      role: staff.role || "Staff",
+    });
+    setShowAddForm(true);
   };
 
   const handleDelete = async (id) => {
@@ -139,7 +173,7 @@ const StaffManagement = () => {
           </button>
           <button
             className="px-6 py-3 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black shadow-xl transition-all transform active:scale-95"
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => (showAddForm ? resetForm() : setShowAddForm(true))}
           >
             {showAddForm ? <X size={18} /> : <UserPlus size={18} />}
             {showAddForm ? "Close Portal" : "Register Personnel"}
@@ -193,14 +227,14 @@ const StaffManagement = () => {
             <div>
               <h3 className="text-white font-black m-0 flex items-center gap-3 uppercase tracking-widest text-xs">
                 <UserPlus size={20} className="text-blue-400" />
-                New Personnel Registration
+              {editingStaffId ? "Update Personnel Profile" : "New Personnel Registration"}
               </h3>
               <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-wider">
                 Credential provisioning in progress
               </p>
             </div>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={resetForm}
               className="text-white/40 hover:text-white transition-colors"
             >
               <X size={24} />
@@ -232,8 +266,9 @@ const StaffManagement = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  disabled={Boolean(editingStaffId)}
                   placeholder="j.doe@autopart.corp"
-                  className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
+                  className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all disabled:opacity-60"
                 />
               </div>
               <div>
@@ -245,9 +280,10 @@ const StaffManagement = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
+                  required={!editingStaffId}
+                  disabled={Boolean(editingStaffId)}
                   placeholder="••••••••"
-                  className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
+                  className="w-full px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-bold text-slate-900 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all disabled:opacity-60"
                 />
               </div>
               <div>
@@ -297,7 +333,7 @@ const StaffManagement = () => {
             <div className="flex justify-end gap-4 mt-10">
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
+                onClick={resetForm}
                 className="px-8 py-4 rounded-2xl bg-slate-50 text-slate-600 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-colors"
               >
                 Discard
@@ -310,7 +346,7 @@ const StaffManagement = () => {
                 {submitting ? (
                   <Loader2 size={18} className="animate-spin" />
                 ) : (
-                  "Finalize Registration"
+                  editingStaffId ? "Save Changes" : "Finalize Registration"
                 )}
               </button>
             </div>
@@ -438,7 +474,10 @@ const StaffManagement = () => {
                     </td>
                     <td className="pr-10 py-6 border-b border-slate-100 text-right">
                       <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                        <button className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-blue-600 hover:shadow-xl border border-slate-100 transition-all active:scale-90">
+                        <button
+                          onClick={() => handleEdit(staff)}
+                          className="p-2.5 rounded-xl bg-white text-slate-400 hover:text-blue-600 hover:shadow-xl border border-slate-100 transition-all active:scale-90"
+                        >
                           <Edit2 size={16} />
                         </button>
                         <button

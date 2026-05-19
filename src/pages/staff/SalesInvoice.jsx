@@ -21,7 +21,6 @@ import {
   Box,
   X,
   Loader2,
-  DollarSign,
   UserPlus,
   Zap,
 } from "lucide-react";
@@ -38,7 +37,8 @@ const SalesInvoice = () => {
   const [parts, setParts] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [salesItems, setSalesItems] = useState([]);
-  const [serviceFee, setServiceFee] = useState(0);
+  const [paymentStatus, setPaymentStatus] = useState("Paid");
+  const [creditAmount, setCreditAmount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [partSearch, setPartSearch] = useState("");
 
@@ -107,9 +107,7 @@ const SalesInvoice = () => {
   
   const loyaltyDiscount = subtotal > 5000 ? subtotal * 0.10 : 0;
   const netSubtotal = subtotal - loyaltyDiscount;
-
-  const tax = netSubtotal * 0.15;
-  const total = netSubtotal + tax + Number(serviceFee);
+  const total = netSubtotal;
 
   const handleSubmit = async () => {
     if (!selectedCustomer) return alert("Please select a customer");
@@ -120,10 +118,23 @@ const SalesInvoice = () => {
       const userString = localStorage.getItem("user");
       const user = userString ? JSON.parse(userString) : null;
       const staffID = user?.StaffID || user?.staffID || 1;
+      const normalizedCredit =
+        paymentStatus === "Partial" ? Number(creditAmount) : 0;
+
+      if (
+        paymentStatus === "Partial" &&
+        (normalizedCredit <= 0 || normalizedCredit >= total)
+      ) {
+        alert("Partial payment requires a credit amount greater than 0 and less than the invoice total.");
+        setLoading(false);
+        return;
+      }
 
       const invoiceData = {
         customerID: selectedCustomer.customerID,
         staffID: staffID,
+        paymentStatus,
+        creditAmount: normalizedCredit,
         items: salesItems.map((item) => ({
           partID: item.partID,
           quantity: item.quantity,
@@ -133,7 +144,9 @@ const SalesInvoice = () => {
       alert("Invoice created successfully!");
       setSalesItems([]);
       setSelectedCustomer(null);
-      setServiceFee(0);
+      setPaymentStatus("Paid");
+      setCreditAmount(0);
+      loadInitialData();
     } catch (error) {
       alert(
         "Error creating invoice: " +
@@ -353,21 +366,35 @@ const SalesInvoice = () => {
               <div className="p-12 border-t border-black/5 flex flex-col md:flex-row justify-between gap-12 bg-[#f8f8f8]/50">
                 <div className="flex-1">
                   <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] mb-4 block ml-1 font-oswald italic">
-                    Service & Technical Labor Fee
+                    Payment Handling
                   </label>
-                  <div className="relative w-64 group">
-                    <DollarSign
-                      size={20}
-                      className="absolute left-6 top-1/2 -translate-y-1/2 text-[#111111]/30 group-focus-within:text-[#fcd20b]"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                    <select
+                      value={paymentStatus}
+                      onChange={(e) => {
+                        setPaymentStatus(e.target.value);
+                        if (e.target.value !== "Partial") setCreditAmount(0);
+                      }}
+                      className="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent outline-none focus:border-[#fcd20b] shadow-xl text-sm font-bold text-[#111111] font-oswald italic"
+                    >
+                      <option value="Paid">Paid in full</option>
+                      <option value="Partial">Partial payment</option>
+                      <option value="Unpaid">Unpaid credit</option>
+                    </select>
                     <input
                       type="number"
-                      value={serviceFee}
-                      onChange={(e) => setServiceFee(e.target.value)}
-                      className="w-full pl-16 pr-6 py-5 rounded-2xl bg-white border-2 border-transparent outline-none focus:border-[#fcd20b] shadow-xl text-xl font-bold text-[#111111] placeholder:text-[#7a7a7a]/30 font-oswald italic"
-                      placeholder="0.00"
+                      min="0"
+                      max={Math.max(total - 0.01, 0)}
+                      value={paymentStatus === "Partial" ? creditAmount : 0}
+                      onChange={(e) => setCreditAmount(e.target.value)}
+                      disabled={paymentStatus !== "Partial"}
+                      className="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent outline-none focus:border-[#fcd20b] shadow-xl text-sm font-bold text-[#111111] font-oswald italic disabled:opacity-50"
+                      placeholder="Outstanding credit"
                     />
                   </div>
+                  <p className="text-[10px] text-[#7a7a7a] font-bold mt-4 uppercase tracking-widest">
+                    Discounts, stock reduction, credit balance, and invoice email are handled by the backend.
+                  </p>
                 </div>
                 <div className="w-full md:w-96 flex flex-col gap-6">
                   <div className="flex justify-between items-center group/total">
@@ -388,25 +415,9 @@ const SalesInvoice = () => {
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center group/total">
-                    <span className="text-[11px] font-bold text-[#7a7a7a] tracking-[0.2em] uppercase font-oswald italic group-hover/total:text-[#111111] transition-colors">
-                      Taxation (VAT 15%)
-                    </span>
-                    <span className="text-xl font-bold text-[#111111] font-oswald italic">
-                      ${tax.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center group/total">
-                    <span className="text-[11px] font-bold text-[#7a7a7a] tracking-[0.2em] uppercase font-oswald italic group-hover/total:text-[#111111] transition-colors">
-                      System Service Fee
-                    </span>
-                    <span className="text-xl font-bold text-[#111111] font-oswald italic">
-                      ${Number(serviceFee).toFixed(2)}
-                    </span>
-                  </div>
                   <div className="flex justify-between items-center mt-4 pt-10 border-t-4 border-[#111111]">
                     <span className="text-sm font-bold text-[#111111] tracking-[0.3em] uppercase font-oswald italic">
-                      Total Payable
+                      Backend Invoice Total
                     </span>
                     <span className="text-6xl font-bold text-[#111111] tracking-tighter font-oswald italic leading-none">
                       <span className="text-[#fcd20b] text-4xl mr-1">$</span>
