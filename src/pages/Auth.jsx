@@ -244,8 +244,7 @@ const Auth = ({ onLogin }) => {
               <>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald">
-                    Legal Identity
-                  </label>
+Real Name                  </label>
                   <div className="relative">
                     <User
                       className="absolute left-5 top-1/2 -translate-y-1/2 text-[#111111]/30"
@@ -265,8 +264,7 @@ const Auth = ({ onLogin }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald">
-                      Com-Link
-                    </label>
+Phone Number                    </label>
                     <div className="relative">
                       <Phone
                         className="absolute left-5 top-1/2 -translate-y-1/2 text-[#111111]/30"
@@ -307,7 +305,7 @@ const Auth = ({ onLogin }) => {
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald">
-                Digital Signature (Email)
+                Enail
               </label>
               <div className="relative">
                 <Mail
@@ -329,7 +327,7 @@ const Auth = ({ onLogin }) => {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] font-oswald">
-                  Access Key
+                  Password
                 </label>
                 {isLogin && (
                   <button

@@ -19,6 +19,7 @@ import {
   Save,
   Send,
   Trash2,
+  ChevronRight,
 } from "lucide-react";
 import Pagination from "../../components/Pagination";
 import {
@@ -61,6 +62,22 @@ const PurchaseInvoice = () => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (selectedVendor) {
+      const vendorParts = parts
+        .filter((p) => p.vendorID === selectedVendor.vendorID)
+        .map((p) => ({
+          partID: p.partID,
+          partName: p.partName,
+          unitPrice: p.costPrice || 0,
+          quantity: 0,
+        }));
+      setPurchaseItems(vendorParts);
+    } else {
+      setPurchaseItems([]);
+    }
+  }, [selectedVendor, parts]);
+
   const loadData = async () => {
     try {
       const [venRes, partRes, purRes] = await Promise.all([
@@ -78,31 +95,8 @@ const PurchaseInvoice = () => {
     }
   };
 
-  const addItem = (part) => {
-    const existing = purchaseItems.find((item) => item.partID === part.partID);
-    if (existing) {
-      setPurchaseItems(
-        purchaseItems.map((item) =>
-          item.partID === part.partID
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        ),
-      );
-    } else {
-      setPurchaseItems([
-        ...purchaseItems,
-        {
-          partID: part.partID,
-          partName: part.partName,
-          unitPrice: part.partPrice, // Use current part price as default unit price for purchase
-          quantity: 1,
-        },
-      ]);
-    }
-  };
-
   const removeItem = (partID) => {
-    setPurchaseItems(purchaseItems.filter((item) => item.partID !== partID));
+    updateItem(partID, "quantity", 0);
   };
 
   const updateItem = (partID, field, value) => {
@@ -119,27 +113,28 @@ const PurchaseInvoice = () => {
   );
 
   const handleSubmit = async () => {
-    if (!selectedVendor) return alert("Please select a strategic partner");
-    if (purchaseItems.length === 0)
-      return alert("No inventory assets staged for procurement");
+    if (!selectedVendor) return alert("Please select a supplier");
+    const activeItems = purchaseItems.filter((item) => item.quantity > 0);
+    if (activeItems.length === 0)
+      return alert("No parts selected for purchase");
 
     setLoading(true);
     try {
       const purchaseData = {
-        vendorID: selectedVendor.vendorID,
-        purchaseItems: purchaseItems.map((item) => ({
-          partID: item.partID,
+        vendorId: selectedVendor.vendorID,
+        items: activeItems.map((item) => ({
+          partId: item.partID,
           quantity: item.quantity,
-          unitPrice: Number(item.unitPrice),
+          unitCost: Number(item.unitPrice),
         })),
       };
       await purchasesService.create(purchaseData);
-      alert("Procurement order finalized successfully");
+      alert("Purchase order placed successfully");
       setPurchaseItems([]);
       setSelectedVendor(null);
       loadData();
     } catch (error) {
-      alert("Procurement reconciliation failed");
+      alert("Purchase order submission failed");
     } finally {
       setLoading(false);
     }
@@ -186,15 +181,15 @@ const PurchaseInvoice = () => {
             ) : (
               <FileCheck size={18} />
             )}
-            {loading ? "Reconciling..." : "Finalize Procurement"}
+            {loading ? "Submitting..." : "Submit Purchase Order"}
           </button>
         </div>
       </div>
 
       {/* Procurement Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         <ProcureStat
-          title="Inbound Assets"
+          title="Purchase Orders"
           value={purchases.length}
           icon={Briefcase}
           color="#1A73E8"
@@ -206,14 +201,8 @@ const PurchaseInvoice = () => {
           color="#FB8C00"
         />
         <ProcureStat
-          title="Audit Score"
-          value="98.2%"
-          icon={ShieldCheck}
-          color="#43A047"
-        />
-        <ProcureStat
           title="Procured (MTD)"
-          value={`$${Math.round(purchases.reduce((acc, p) => acc + p.totalAmount, 0) / 1000)}k`}
+          value={`$${Math.round(purchases.reduce((acc, p) => acc + (p.totalCost || p.totalAmount || 0), 0) / 1000)}k`}
           icon={ArrowUpRight}
           color="#D81B60"
         />
@@ -235,43 +224,17 @@ const PurchaseInvoice = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Stage Catalog Assets..."
-                  className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-[10px] text-white outline-none focus:bg-white/20 transition-all uppercase font-bold"
+                  placeholder={
+                    selectedVendor
+                      ? "Search Parts..."
+                      : "Select Supplier First..."
+                  }
+                  disabled={!selectedVendor}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-[10px] text-white outline-none focus:bg-white/20 transition-all uppercase font-bold disabled:opacity-50"
                   value={partSearch}
                   onChange={(e) => setPartSearch(e.target.value)}
                 />
-                {partSearch && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 max-h-64 overflow-y-auto p-2">
-                    {parts
-                      .filter((p) =>
-                        p.partName
-                          .toLowerCase()
-                          .includes(partSearch.toLowerCase()),
-                      )
-                      .map((part) => (
-                        <button
-                          key={part.partID}
-                          onClick={() => {
-                            addItem(part);
-                            setPartSearch("");
-                          }}
-                          className="w-full p-3 rounded-xl hover:bg-slate-50 text-left flex justify-between items-center transition-colors"
-                        >
-                          <div>
-                            <p className="text-xs font-black text-slate-900 m-0">
-                              {part.partName}
-                            </p>
-                            <p className="text-[9px] text-slate-400 m-0 font-bold tracking-widest uppercase">
-                              Inventory: {part.stockQuantity}
-                            </p>
-                          </div>
-                          <p className="text-xs font-black text-blue-600">
-                            ${part.partPrice.toFixed(2)}
-                          </p>
-                        </button>
-                      ))}
-                  </div>
-                )}
+
               </div>
             </div>
 
@@ -280,7 +243,7 @@ const PurchaseInvoice = () => {
                 <thead>
                   <tr className="bg-slate-50/50">
                     <th className="pl-8 py-4 text-[10px] uppercase text-slate-500 font-black border-b border-slate-100 tracking-widest">
-                      Asset Details
+                      Part Details
                     </th>
                     <th className="py-4 text-[10px] uppercase text-slate-500 font-black border-b border-slate-100 tracking-widest">
                       Cost/Unit
@@ -289,7 +252,7 @@ const PurchaseInvoice = () => {
                       Qty
                     </th>
                     <th className="py-4 text-[10px] uppercase text-slate-500 font-black border-b border-slate-100 tracking-widest">
-                      Valuation
+                      Total Cost
                     </th>
                     <th className="pr-8 py-4 border-b border-slate-100"></th>
                   </tr>
@@ -303,72 +266,118 @@ const PurchaseInvoice = () => {
                           className="mx-auto text-slate-100 mb-4"
                         />
                         <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                          No assets staged for procurement
+                          {selectedVendor
+                            ? "No parts found in vendor catalog"
+                            : "Select supplier to load parts catalog"}
                         </p>
                       </td>
                     </tr>
                   ) : (
-                    purchaseItems.map((item) => (
-                      <tr
-                        key={item.partID}
-                        className="group hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="pl-8 py-5 border-b border-slate-100">
-                          <div>
-                            <p className="font-bold text-sm m-0 text-slate-900 tracking-tight leading-none mb-1">
-                              {item.partName}
+                    (() => {
+                      const filtered = purchaseItems.filter((item) =>
+                        item.partName
+                          .toLowerCase()
+                          .includes(partSearch.toLowerCase())
+                      );
+                      if (filtered.length === 0) {
+                        return (
+                          <tr>
+                            <td colSpan="5" className="py-12 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+                              No matching parts found
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return filtered.map((item) => (
+                        <tr
+                          key={item.partID}
+                          className={`group hover:bg-slate-50 transition-colors ${item.quantity > 0 ? "bg-blue-50/20" : ""}`}
+                        >
+                          <td className="pl-8 py-5 border-b border-slate-100">
+                            <div>
+                              <p className="font-bold text-sm m-0 text-slate-900 tracking-tight leading-none mb-1">
+                                {item.partName}
+                              </p>
+                              <p className="text-[9px] text-slate-400 m-0 font-black uppercase tracking-widest">
+                                ID: PRT-{item.partID}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-5 border-b border-slate-100">
+                            <div className="flex items-center gap-1">
+                              <span className="text-slate-400 font-bold">$</span>
+                              <input
+                                type="number"
+                                value={item.unitPrice}
+                                onChange={(e) =>
+                                  updateItem(
+                                    item.partID,
+                                    "unitPrice",
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-20 bg-transparent border-none text-sm font-black text-slate-900 focus:ring-0 outline-none p-0"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-5 border-b border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() =>
+                                  updateItem(
+                                    item.partID,
+                                    "quantity",
+                                    Math.max(0, item.quantity - 1)
+                                  )
+                                }
+                                className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-blue-600 active:scale-95 transition-all text-sm font-bold shadow-sm"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  updateItem(
+                                    item.partID,
+                                    "quantity",
+                                    Math.max(0, Number(e.target.value))
+                                  )
+                                }
+                                className="w-10 bg-transparent border-none text-sm font-black text-slate-900 text-center focus:ring-0 outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <button
+                                onClick={() =>
+                                  updateItem(
+                                    item.partID,
+                                    "quantity",
+                                    item.quantity + 1
+                                  )
+                                }
+                                className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-blue-600 active:scale-95 transition-all text-sm font-bold shadow-sm"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-5 border-b border-slate-100">
+                            <p className="text-sm font-black text-blue-600 m-0 tracking-tight">
+                              ${(item.unitPrice * item.quantity).toFixed(2)}
                             </p>
-                            <p className="text-[9px] text-slate-400 m-0 font-black uppercase tracking-widest">
-                              ID: PRT-{item.partID}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-5 border-b border-slate-100">
-                          <div className="flex items-center gap-1">
-                            <span className="text-slate-400 font-bold">$</span>
-                            <input
-                              type="number"
-                              value={item.unitPrice}
-                              onChange={(e) =>
-                                updateItem(
-                                  item.partID,
-                                  "unitPrice",
-                                  e.target.value,
-                                )
-                              }
-                              className="w-20 bg-transparent border-none text-sm font-black text-slate-900 focus:ring-0 outline-none p-0"
-                            />
-                          </div>
-                        </td>
-                        <td className="py-5 border-b border-slate-100">
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItem(
-                                item.partID,
-                                "quantity",
-                                Number(e.target.value),
-                              )
-                            }
-                            className="w-16 bg-transparent border-none text-sm font-black text-slate-900 focus:ring-0 outline-none p-0"
-                          />
-                        </td>
-                        <td className="py-5 border-b border-slate-100">
-                          <p className="text-sm font-black text-blue-600 m-0 tracking-tight">
-                            ${(item.unitPrice * item.quantity).toFixed(2)}
-                          </p>
-                        </td>
-                        <td className="pr-8 py-5 border-b border-slate-100 text-right">
-                          <button
-                            onClick={() => removeItem(item.partID)}
-                            className="p-2 rounded-xl bg-white text-rose-400 hover:text-rose-600 hover:shadow-md border border-slate-100 transition-all opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="pr-8 py-5 border-b border-slate-100 text-right">
+                            {item.quantity > 0 && (
+                              <button
+                                onClick={() => removeItem(item.partID)}
+                                className="p-2 rounded-xl bg-white text-rose-400 hover:text-rose-600 hover:shadow-md border border-slate-100 transition-all"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ));
+                    })()
                   )}
                 </tbody>
               </table>
@@ -377,7 +386,7 @@ const PurchaseInvoice = () => {
             <div className="p-8 bg-slate-900 flex justify-between items-center text-white">
               <div>
                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">
-                  Estimated Inbound Total
+                  Estimated Order Total
                 </p>
                 <h3 className="text-3xl font-black m-0 tracking-tighter">
                   $
@@ -388,7 +397,7 @@ const PurchaseInvoice = () => {
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  Assets Staged
+                  Items Selected
                 </p>
                 <p className="text-xl font-black m-0">{purchaseItems.length}</p>
               </div>
@@ -406,42 +415,6 @@ const PurchaseInvoice = () => {
               <Truck size={18} className="text-white/60" />
             </div>
             <div className="p-8">
-              <div className="relative mb-6 group">
-                <Search
-                  size={16}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  type="text"
-                  placeholder="Identify Strategic Partner..."
-                  className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-all"
-                  value={vendorSearch}
-                  onChange={(e) => setVendorSearch(e.target.value)}
-                />
-                {vendorSearch && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 max-h-48 overflow-y-auto p-2">
-                    {vendors
-                      .filter((v) =>
-                        v.vendorName
-                          .toLowerCase()
-                          .includes(vendorSearch.toLowerCase()),
-                      )
-                      .map((vendor) => (
-                        <button
-                          key={vendor.vendorID}
-                          onClick={() => {
-                            setSelectedVendor(vendor);
-                            setVendorSearch("");
-                          }}
-                          className="w-full p-3 rounded-xl hover:bg-slate-50 text-left font-bold text-sm text-slate-700 transition-colors"
-                        >
-                          {vendor.vendorName}
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-
               {selectedVendor ? (
                 <div className="animate-in fade-in slide-in-from-right-4 duration-300 p-5 rounded-3xl bg-slate-50 border border-slate-100 group relative">
                   <div className="flex items-center gap-4 mb-4">
@@ -459,12 +432,8 @@ const PurchaseInvoice = () => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
-                      <Calendar size={14} className="text-slate-400" />
-                      Active since 2024
-                    </div>
-                    <div className="flex items-center gap-3 text-xs font-bold text-slate-500">
-                      <RefreshCw size={14} className="text-slate-400" />
-                      48h Lead Time
+                      <ShieldCheck size={14} className="text-slate-400" />
+                      System Registered Partner
                     </div>
                   </div>
                   <button
@@ -475,11 +444,60 @@ const PurchaseInvoice = () => {
                   </button>
                 </div>
               ) : (
-                <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                  <Truck size={32} className="mx-auto text-slate-200 mb-2" />
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                    No strategic partner identified
-                  </p>
+                <div className="flex flex-col gap-4">
+                  <div className="relative group">
+                    <Search
+                      size={16}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Identify Strategic Partner..."
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm font-black text-slate-900 outline-none focus:bg-white focus:border-blue-500 transition-all"
+                      value={vendorSearch}
+                      onChange={(e) => setVendorSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    {vendors
+                      .filter((v) =>
+                        v.vendorName
+                          .toLowerCase()
+                          .includes(vendorSearch.toLowerCase())
+                      )
+                      .map((vendor) => (
+                        <div
+                          key={vendor.vendorID}
+                          onClick={() => {
+                            setSelectedVendor(vendor);
+                            setVendorSearch("");
+                          }}
+                          className="p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-blue-50/50 hover:border-blue-200 cursor-pointer transition-all flex items-center justify-between group/item"
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 m-0">
+                              {vendor.vendorName}
+                            </p>
+                            <p className="text-[9px] text-slate-400 m-0 font-bold tracking-widest uppercase">
+                              ID: V-{vendor.vendorID.toString().padStart(4, "0")}
+                            </p>
+                          </div>
+                          <ChevronRight
+                            size={16}
+                            className="text-slate-300 group-hover/item:text-blue-500 group-hover/item:translate-x-1 transition-all"
+                          />
+                        </div>
+                      ))}
+                    {vendors.filter((v) =>
+                      v.vendorName
+                        .toLowerCase()
+                        .includes(vendorSearch.toLowerCase())
+                    ).length === 0 && (
+                      <p className="text-slate-400 text-center text-xs py-4">
+                        No partners match search
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

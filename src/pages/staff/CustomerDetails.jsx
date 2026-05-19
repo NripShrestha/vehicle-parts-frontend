@@ -46,7 +46,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <Loader2 size={48} className="text-slate-900 animate-spin mb-4" />
         <p className="text-slate-500 font-black tracking-widest uppercase text-xs animate-pulse">
-          Decrypting Customer Profile...
+          Loading Customer Profile...
         </p>
       </div>
     );
@@ -71,8 +71,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
     );
   }
 
-  const totalSpent =
-    customer.salesInvoices?.reduce((acc, inv) => acc + inv.totalAmount, 0) || 0;
+  const totalSpent = customer.totalSpent || 0;
 
   return (
     <div className="pb-10 font-inter animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -87,7 +86,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
           </button>
           <div>
             <h2 className="text-3xl font-black text-slate-900 m-0 tracking-tight">
-              Customer Strategic Profile
+              Customer Profile Details
             </h2>
             <p className="text-slate-500 text-sm font-medium mt-1 uppercase tracking-widest text-[10px]">
               Reference: CST-{customer.customerID}
@@ -99,7 +98,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
             <Mail size={16} /> Contact Hub
           </button>
           <button className="px-8 py-3 rounded-2xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-black shadow-xl transition-all transform active:scale-95">
-            <ShieldCheck size={18} /> Verify Credentials
+            <ShieldCheck size={18} /> Verify Profile
           </button>
         </div>
       </div>
@@ -141,7 +140,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
                   </div>
                   <div className="bg-slate-50/50 p-5 rounded-3xl border border-slate-100">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 leading-none">
-                      ASSETS
+                      VEHICLES
                     </p>
                     <p className="text-xl font-black text-slate-900 tracking-tighter">
                       {customer.vehicles?.length || 0}
@@ -210,25 +209,25 @@ const CustomerDetails = ({ customerId, onBack }) => {
                   </div>
                   <div>
                     <h4 className="m-0 text-xl font-black text-slate-900 tracking-tight">
-                      Registered Vehicle Assets
-                    </h4>
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">
-                      Managed Technical Profiles
-                    </p>
-                  </div>
+                    Registered Vehicles
+                  </h4>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">
+                    Vehicle Details & Models
+                  </p>
                 </div>
-                <button className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-xl active:scale-95">
-                  <Plus size={16} /> Add Asset
-                </button>
               </div>
+              <button className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-xl active:scale-95">
+                <Plus size={16} /> Add Vehicle
+              </button>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {!customer.vehicles || customer.vehicles.length === 0 ? (
-                  <div className="col-span-2 py-12 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                      No assets currently registered
-                    </p>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {!customer.vehicles || customer.vehicles.length === 0 ? (
+                <div className="col-span-2 py-12 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-100">
+                  <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
+                    No vehicles currently registered
+                  </p>
+                </div>
                 ) : (
                   customer.vehicles.map((vehicle, i) => (
                     <div
@@ -240,18 +239,18 @@ const CustomerDetails = ({ customerId, onBack }) => {
                       </div>
                       <div className="flex justify-between items-start mb-6">
                         <span className="px-4 py-1.5 bg-white rounded-xl border border-slate-200 text-xs font-black tracking-widest shadow-sm group-hover:border-blue-500 transition-colors uppercase">
-                          {vehicle.vehiclePlateNumber}
+                          {vehicle.vehicleNumber}
                         </span>
                         <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:text-slate-900 transition-all">
                           <ExternalLink size={18} />
                         </div>
                       </div>
                       <p className="m-0 text-lg font-black text-slate-900 tracking-tight mb-2 leading-none">
-                        {vehicle.vehicleModel}
+                        {vehicle.brand} {vehicle.model}
                       </p>
                       <p className="m-0 text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2">
                         <ShieldCheck size={12} className="text-emerald-500" />{" "}
-                        Technical Data Verified
+                        Vehicle Info Verified
                       </p>
                     </div>
                   ))
@@ -269,10 +268,10 @@ const CustomerDetails = ({ customerId, onBack }) => {
                 </div>
                 <div>
                   <h4 className="m-0 text-xs font-black uppercase tracking-widest">
-                    Transaction Ledger
+                    Transaction History
                   </h4>
                   <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-wider">
-                    Historical Fulfillment Data
+                    Past Sales & Orders
                   </p>
                 </div>
               </div>
@@ -300,8 +299,8 @@ const CustomerDetails = ({ customerId, onBack }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {!customer.salesInvoices ||
-                  customer.salesInvoices.length === 0 ? (
+                  {!customer.salesHistory ||
+                  customer.salesHistory.length === 0 ? (
                     <tr>
                       <td colSpan="4" className="py-24 text-center">
                         <History
@@ -314,9 +313,9 @@ const CustomerDetails = ({ customerId, onBack }) => {
                       </td>
                     </tr>
                   ) : (
-                    customer.salesInvoices.map((row, i) => (
+                    customer.salesHistory.map((row, i) => (
                       <tr
-                        key={row.invoiceID}
+                        key={row.salesInvoiceID}
                         className="hover:bg-slate-50/50 transition-colors group"
                       >
                         <td className="pl-10 py-6 border-b border-slate-100">
@@ -333,7 +332,7 @@ const CustomerDetails = ({ customerId, onBack }) => {
                         </td>
                         <td className="py-6 border-b border-slate-100">
                           <p className="text-xs font-bold text-slate-600 m-0 tracking-tight uppercase leading-tight">
-                            Service / Part Fulfillment #{row.invoiceID}
+                            Sale Transaction #{row.salesInvoiceID}
                           </p>
                         </td>
                         <td className="py-6 border-b border-slate-100">

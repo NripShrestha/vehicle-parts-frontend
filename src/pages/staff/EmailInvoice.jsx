@@ -21,8 +21,7 @@ const EmailInvoice = () => {
             Dispatch Digital Invoice
           </h2>
           <p className="text-text-muted text-sm font-medium mt-1">
-            Direct encrypted communication for billing assets and service
-            documentation.
+            Direct email delivery for invoice and billing details.
           </p>
         </div>
       </div>
@@ -35,7 +34,7 @@ const EmailInvoice = () => {
               <div className="flex items-center gap-3">
                 <Mail size={18} className="text-white/60" />
                 <h4 className="m-0 text-base font-bold">
-                  Encrypted Message Composer
+                  Invoice Email Composer
                 </h4>
               </div>
             </div>
@@ -108,7 +107,7 @@ AutoPart Pro Team`}
                   className="px-8 py-3.5 rounded-xl bg-blue-500 text-white text-xs font-extrabold uppercase tracking-widest flex items-center gap-2 hover:bg-black shadow-header transition-all transform active:scale-95"
                   onClick={() => alert("Invoice Dispatched!")}
                 >
-                  <Send size={18} /> Transmit Assets Now
+                  <Send size={18} /> Send Invoice Now
                 </button>
               </div>
             </div>
@@ -132,7 +131,7 @@ AutoPart Pro Team`}
                 <FileText size={32} />
               </div>
               <p className="text-[10px] font-extrabold text-text-muted uppercase tracking-widest mb-1">
-                GENERATED PDF LEDGER
+                GENERATED INVOICE PDF
               </p>
               <p className="text-sm font-extrabold text-text-main m-0 tracking-tight">
                 INV-2024-042.pdf

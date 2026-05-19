@@ -77,7 +77,7 @@ const SalesInvoice = () => {
         {
           partID: part.partID,
           partName: part.partName,
-          partPrice: part.partPrice,
+          partPrice: part.sellingPrice || 0,
           quantity: 1,
         },
       ]);
@@ -104,8 +104,12 @@ const SalesInvoice = () => {
     (acc, item) => acc + item.partPrice * item.quantity,
     0,
   );
-  const tax = subtotal * 0.15;
-  const total = subtotal + tax + Number(serviceFee);
+  
+  const loyaltyDiscount = subtotal > 5000 ? subtotal * 0.10 : 0;
+  const netSubtotal = subtotal - loyaltyDiscount;
+
+  const tax = netSubtotal * 0.15;
+  const total = netSubtotal + tax + Number(serviceFee);
 
   const handleSubmit = async () => {
     if (!selectedCustomer) return alert("Please select a customer");
@@ -113,13 +117,16 @@ const SalesInvoice = () => {
 
     setLoading(true);
     try {
+      const userString = localStorage.getItem("user");
+      const user = userString ? JSON.parse(userString) : null;
+      const staffID = user?.StaffID || user?.staffID || 1;
+
       const invoiceData = {
         customerID: selectedCustomer.customerID,
-        serviceFee: Number(serviceFee),
-        salesItems: salesItems.map((item) => ({
+        staffID: staffID,
+        items: salesItems.map((item) => ({
           partID: item.partID,
           quantity: item.quantity,
-          unitPrice: item.partPrice,
         })),
       };
       await salesService.createInvoice(invoiceData);
@@ -128,7 +135,10 @@ const SalesInvoice = () => {
       setSelectedCustomer(null);
       setServiceFee(0);
     } catch (error) {
-      alert("Error creating invoice");
+      alert(
+        "Error creating invoice: " +
+          (error.response?.data?.message || "Server error"),
+      );
     } finally {
       setLoading(false);
     }
@@ -159,12 +169,12 @@ const SalesInvoice = () => {
             </span>
           </div>
           <p className="text-[#7a7a7a] text-sm font-medium uppercase tracking-widest italic">
-            High-Fidelity Transaction Matrix & Asset Reconciliation
+            Point of Sale Checkout & Invoice Generation
           </p>
         </div>
         <div className="flex gap-4">
           <button className="px-8 py-4 rounded-full border-2 border-black/5 bg-white text-[#111111] text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-[#fcd20b] hover:border-[#fcd20b] transition-all shadow-sm font-oswald">
-            <Save size={16} /> SAVE CACHE
+            <Save size={16} /> SAVE PROGRESS
           </button>
           <button
             onClick={handleSubmit}
@@ -176,7 +186,7 @@ const SalesInvoice = () => {
             ) : (
               <Send size={18} />
             )}
-            {loading ? "TRANSMITTING..." : "FINALIZE & TRANSMIT"}
+            {loading ? "SUBMITTING..." : "FINALIZE & SUBMIT"}
           </button>
         </div>
       </div>
@@ -235,7 +245,7 @@ const SalesInvoice = () => {
                             </div>
                           </div>
                           <p className="text-sm font-bold text-[#fcd20b] bg-[#111111] px-4 py-1.5 rounded-full font-oswald tracking-tighter">
-                            ${part.partPrice.toFixed(2)}
+                            ${(part.sellingPrice || 0).toFixed(2)}
                           </p>
                         </button>
                       ))}
@@ -368,6 +378,16 @@ const SalesInvoice = () => {
                       ${subtotal.toFixed(2)}
                     </span>
                   </div>
+                  {loyaltyDiscount > 0 && (
+                    <div className="flex justify-between items-center group/total">
+                      <span className="text-[11px] font-bold text-emerald-500 tracking-[0.2em] uppercase font-oswald italic transition-colors flex items-center gap-2">
+                        <Zap size={14} className="fill-emerald-500" /> Loyalty Discount (10%)
+                      </span>
+                      <span className="text-xl font-bold text-emerald-500 font-oswald italic">
+                        -${loyaltyDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center group/total">
                     <span className="text-[11px] font-bold text-[#7a7a7a] tracking-[0.2em] uppercase font-oswald italic group-hover/total:text-[#111111] transition-colors">
                       Taxation (VAT 15%)
@@ -521,7 +541,7 @@ const SalesInvoice = () => {
                   <div className="mt-12 pt-10 border-t border-black/5">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-[10px] font-bold text-[#7a7a7a] uppercase tracking-[0.2em] font-oswald italic">
-                        Account Integrity Matrix
+                        Account Loyalty Status
                       </span>
                       <span className="text-[10px] font-bold text-emerald-500 font-oswald uppercase tracking-widest">
                         OPTIMAL

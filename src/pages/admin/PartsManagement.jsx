@@ -156,10 +156,10 @@ const PartsManagement = () => {
       <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16 animate-xtra">
         <div>
           <h2 className="text-5xl font-bold text-[#111111] m-0 tracking-tighter font-oswald italic uppercase leading-none mb-2">
-            INVENTORY <span className="text-[#fcd20b]">LOGISTICS</span>
+            INVENTORY <span className="text-[#fcd20b]">MANAGEMENT</span>
           </h2>
           <p className="text-[#7a7a7a] text-sm font-medium uppercase tracking-widest italic">
-            Monitor Stock Levels & Product Catalog Telemetry
+            Monitor stock levels, reorder values, and part pricing
           </p>
         </div>
         <div className="flex gap-4">
@@ -171,7 +171,7 @@ const PartsManagement = () => {
             onClick={() => setShowAddForm(!showAddForm)}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
-            {showAddForm ? "CLOSE EDITOR" : "NEW CATALOG ENTRY"}
+            {showAddForm ? "CLOSE FORM" : "ADD NEW PART"}
           </button>
         </div>
       </div>
@@ -378,19 +378,19 @@ const PartsManagement = () => {
             <thead>
               <tr className="bg-[#f8f8f8]">
                 <th className="pl-10 py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Asset Identity
+                  Part Name
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Classification
+                  Category
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Telemetry
+                  Stock Status
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
                   Unit Price
                 </th>
                 <th className="pr-10 py-6 text-right text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Mgmt
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -403,7 +403,7 @@ const PartsManagement = () => {
                       className="animate-spin mx-auto mb-4 text-[#fcd20b]"
                     />
                     <p className="font-bold font-oswald uppercase tracking-widest text-[#7a7a7a] text-[10px]">
-                      Synchronizing Inventory Hub...
+                      Loading Parts Inventory...
                     </p>
                   </td>
                 </tr>
@@ -411,7 +411,7 @@ const PartsManagement = () => {
                 <tr>
                   <td colSpan="5" className="py-24 text-center">
                     <p className="font-bold font-oswald uppercase tracking-widest text-[#7a7a7a] text-[10px]">
-                      NO PRODUCTS DETECTED IN LOCAL CLUSTER
+                      NO PARTS DETECTED IN INVENTORY
                     </p>
                   </td>
                 </tr>

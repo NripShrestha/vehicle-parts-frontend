@@ -202,7 +202,7 @@ const StaffDashboard = ({ setActiveScreen }) => {
             ) : (
               metrics.recentOperations.map((op, idx, arr) => (
                 <div
-                  key={op.invoiceID}
+                  key={op.salesInvoiceID}
                   className={`flex items-center py-8 gap-6 ${idx !== arr.length - 1 ? "border-b border-black/5" : ""} group hover:translate-x-3 transition-transform duration-500`}
                 >
                   <div className="w-16 h-16 rounded-[20px] bg-[#f8f8f8] border border-black/5 flex items-center justify-center text-[#111111]/40 shadow-sm shrink-0 group-hover:scale-110 group-hover:bg-[#fcd20b] group-hover:text-[#111111] transition-all">
@@ -210,7 +210,7 @@ const StaffDashboard = ({ setActiveScreen }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="m-0 text-lg font-bold text-[#111111] font-oswald uppercase italic tracking-tighter truncate leading-none mb-1">
-                      #{op.invoiceID} · TRANSACTION FINALIZED
+                      #{op.salesInvoiceID} · TRANSACTION FINALIZED
                     </p>
                     <p className="m-0 text-[10px] text-[#7a7a7a] font-bold uppercase tracking-widest mt-1">
                       Operator: Verified · Node: A-01
@@ -276,7 +276,7 @@ const StaffDashboard = ({ setActiveScreen }) => {
                     ${metrics.todaySales.toFixed(0)}
                   </h4>
                   <p className="m-0 text-[9px] font-bold text-[#7a7a7a] group-hover:text-white/40 uppercase tracking-widest">
-                    GROSS YIELD
+                    DAILY REVENUE
                   </p>
                 </div>
               </div>

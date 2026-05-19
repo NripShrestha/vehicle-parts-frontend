@@ -104,7 +104,7 @@ const BuySell = ({ onExploreAsset }) => {
               : "bg-transparent text-text-muted hover:bg-slate-50 hover:text-text-main"
           }`}
         >
-          <ShoppingBag size={18} /> Buy Assets
+          <ShoppingBag size={18} /> Buy Parts
         </button>
         <button
           onClick={() => setActiveTab("sell")}
@@ -196,7 +196,7 @@ const BuySell = ({ onExploreAsset }) => {
                       onClick={() => onExploreAsset(item)}
                       className="px-6 py-2.5 bg-text-main text-white rounded-xl text-[10px] font-extrabold uppercase tracking-widest hover:bg-blue-500 shadow-sm transition-all transform active:scale-95"
                     >
-                      Explore Asset
+                      Explore Item
                     </button>
                   </div>
                 </div>
@@ -248,7 +248,7 @@ const BuySell = ({ onExploreAsset }) => {
                 </div>
                 <div>
                   <h4 className="m-0 text-[11px] font-extrabold uppercase tracking-widest">
-                    Request Transmitted Successfully
+                    Request Submitted Successfully
                   </h4>
                   <p className="m-0 text-sm font-bold opacity-80 mt-1">
                     Our review team will contact you within 24 business hours.
@@ -262,7 +262,7 @@ const BuySell = ({ onExploreAsset }) => {
           <div className="bg-white rounded-2xl shadow-material relative overflow-hidden border border-slate-100">
             <div className="absolute top-0 left-0 right-0 h-16 rounded-t-xl flex items-center px-8 text-white shadow-header bg-blue-gradient">
               <h4 className="m-0 text-base font-bold">
-                Appraisal Request Portal
+                Appraisal Request Form
               </h4>
             </div>
             <form
@@ -271,7 +271,7 @@ const BuySell = ({ onExploreAsset }) => {
             >
               <div>
                 <p className="text-[11px] font-extrabold text-text-muted uppercase tracking-widest mb-4">
-                  Select Asset Classification
+                  Select Item Classification
                 </p>
                 <div className="flex gap-10">
                   <label className="flex items-center gap-3 text-sm font-extrabold text-text-main cursor-pointer group">
@@ -302,7 +302,7 @@ const BuySell = ({ onExploreAsset }) => {
 
               <div>
                 <p className="text-[11px] font-extrabold text-text-muted uppercase tracking-widest mb-2">
-                  Item Nomenclature & Specifications
+                  Item Name & Specifications
                 </p>
                 <input
                   type="text"
@@ -338,7 +338,7 @@ const BuySell = ({ onExploreAsset }) => {
 
               <div>
                 <p className="text-[11px] font-extrabold text-text-muted uppercase tracking-widest mb-3">
-                  Visual Asset Upload (Max 5)
+                  Item Photo Upload (Max 5)
                 </p>
                 <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center bg-slate-50 hover:bg-slate-100 hover:border-blue-400 cursor-pointer transition-all group shadow-inner">
                   <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center text-text-muted mx-auto mb-4 group-hover:scale-110 transition-transform">

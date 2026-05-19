@@ -11,14 +11,19 @@ import {
   Loader2,
   Sparkles,
   Briefcase,
+  Activity,
+  Award,
 } from "lucide-react";
 import { customerService, salesService } from "../../services/api";
 
 const CustomerReports = () => {
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("highSpenders"); // "highSpenders", "regulars", "credits"
   const [data, setData] = useState({
     totalCustomers: 0,
     highSpenders: [],
+    regulars: [],
+    pendingCredits: [],
     totalRevenue: 0,
     averageSpend: 0,
   });
@@ -37,27 +42,46 @@ const CustomerReports = () => {
       const customers = custRes.data;
       const invoices = salesRes.data;
 
-      // Calculate total spend per customer
+      // Initialize spend map with all customers to preserve their details (such as CreditBalance)
       const customerSpendMap = {};
-      invoices.forEach((inv) => {
-        if (!customerSpendMap[inv.customerID]) {
-          customerSpendMap[inv.customerID] = {
-            id: inv.customerID,
-            name:
-              customers.find((c) => c.customerID === inv.customerID)
-                ?.fullName || "Unknown",
-            spent: 0,
-            visits: 0,
-          };
-        }
-        customerSpendMap[inv.customerID].spent += inv.totalAmount;
-        customerSpendMap[inv.customerID].visits += 1;
+      customers.forEach((c) => {
+        customerSpendMap[c.customerID] = {
+          id: c.customerID,
+          name: c.fullName || "Unknown",
+          email: c.email || "N/A",
+          phone: c.phoneNumber || "N/A",
+          spent: 0,
+          visits: 0,
+          creditBalance: c.creditBalance || 0,
+        };
       });
 
-      const spendersList = Object.values(customerSpendMap).sort(
-        (a, b) => b.spent - a.spent,
-      );
-      const highSpenders = spendersList.slice(0, 10);
+      invoices.forEach((inv) => {
+        if (customerSpendMap[inv.customerID]) {
+          customerSpendMap[inv.customerID].spent += inv.totalAmount;
+          customerSpendMap[inv.customerID].visits += 1;
+        }
+      });
+
+      const allCustomersList = Object.values(customerSpendMap);
+
+      // 1. High Spenders (Sorted by spent descending)
+      const highSpenders = [...allCustomersList]
+        .filter((c) => c.spent > 0)
+        .sort((a, b) => b.spent - a.spent)
+        .slice(0, 10);
+
+      // 2. Regular Customers (Sorted by visit count descending)
+      const regulars = [...allCustomersList]
+        .filter((c) => c.visits > 0)
+        .sort((a, b) => b.visits - a.visits)
+        .slice(0, 10);
+
+      // 3. Pending Credits (Filtered by credit balance > 0)
+      const pendingCredits = allCustomersList
+        .filter((c) => c.creditBalance > 0)
+        .sort((a, b) => b.creditBalance - a.creditBalance);
+
       const totalRevenue = invoices.reduce(
         (acc, inv) => acc + inv.totalAmount,
         0,
@@ -66,9 +90,11 @@ const CustomerReports = () => {
       setData({
         totalCustomers: customers.length,
         highSpenders: highSpenders,
+        regulars: regulars,
+        pendingCredits: pendingCredits,
         totalRevenue: totalRevenue,
         averageSpend:
-          spendersList.length > 0 ? totalRevenue / spendersList.length : 0,
+          highSpenders.length > 0 ? totalRevenue / highSpenders.length : 0,
       });
     } catch (error) {
       console.error("Error loading report data:", error);
@@ -82,7 +108,7 @@ const CustomerReports = () => {
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <Loader2 size={48} className="text-slate-900 animate-spin mb-4" />
         <p className="text-slate-500 font-black tracking-widest uppercase text-xs animate-pulse">
-          Aggregating Economic Intelligence...
+          Loading Sales Reports...
         </p>
       </div>
     );
@@ -106,14 +132,27 @@ const CustomerReports = () => {
       isUp: true,
     },
     {
-      label: "Avg Portfolio Value",
-      count: `$${Math.round(data.averageSpend)}`,
-      icon: Briefcase,
-      color: "#8b5cf6",
-      trend: "Active",
-      isUp: true,
+      label: "Pending Credits",
+      count: data.pendingCredits.length,
+      icon: AlertTriangle,
+      color: "#f59e0b",
+      trend: "Overdue",
+      isUp: false,
     },
   ];
+
+  const getActiveList = () => {
+    switch (activeTab) {
+      case "regulars":
+        return data.regulars;
+      case "credits":
+        return data.pendingCredits;
+      default:
+        return data.highSpenders;
+    }
+  };
+
+  const activeList = getActiveList();
 
   return (
     <div className="pb-10 font-inter">
@@ -121,16 +160,15 @@ const CustomerReports = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
         <div>
           <h2 className="text-3xl font-black text-slate-900 m-0 tracking-tight">
-            Customer Analytics & Insights
+            Sales Reports & Analytics
           </h2>
           <p className="text-slate-500 text-sm font-medium mt-1 uppercase tracking-widest text-[10px]">
-            Quantitative analysis of customer loyalty metrics and financial risk
-            profiles.
+            Detailed analysis of customer spending, attendance patterns, and outstanding credits.
           </p>
         </div>
         <div className="flex gap-3">
           <button className="px-6 py-3 rounded-2xl bg-white border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-            <Sparkles size={16} className="text-amber-500" /> AI Forecasting
+            <Sparkles size={16} className="text-amber-500" /> Export Report
           </button>
         </div>
       </div>
@@ -146,7 +184,13 @@ const CustomerReports = () => {
               <div className="w-16 h-16 rounded-2xl bg-slate-900 flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-500">
                 <cat.icon size={28} className="text-blue-400" />
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 tracking-widest uppercase">
+              <div
+                className={`flex items-center gap-2 text-[10px] font-black px-3 py-1 rounded-full border tracking-widest uppercase ${
+                  cat.isUp
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                    : "bg-amber-50 text-amber-600 border-amber-100"
+                }`}
+              >
                 {cat.trend}
               </div>
             </div>
@@ -165,25 +209,54 @@ const CustomerReports = () => {
         ))}
       </div>
 
-      {/* High Fidelity Spend Analysis Table */}
+      {/* High Fidelity Dynamic Report Table */}
       <div className="bg-white rounded-[2.5rem] shadow-xl relative overflow-hidden border border-slate-100">
-        <div className="bg-slate-900 p-10 flex justify-between items-center text-white">
+        <div className="bg-slate-900 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-white">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-              <TrendingUp size={28} />
+              <BarChart3 size={28} />
             </div>
             <div>
               <h4 className="m-0 text-xs font-black uppercase tracking-widest">
-                Top Portfolio Spenders
+                Customer-Related Intelligence Reports
               </h4>
               <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-wider">
-                Historical high-value acquisition profiles
+                Select category to display optimized reports for staff review
               </p>
             </div>
           </div>
-          <button className="px-6 py-3 rounded-2xl bg-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10 flex items-center gap-2">
-            <BarChart3 size={16} /> Full Economic Report
-          </button>
+          <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/10">
+            <button
+              onClick={() => setActiveTab("highSpenders")}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none transition-all cursor-pointer ${
+                activeTab === "highSpenders"
+                  ? "bg-[#fcd20b] text-[#111111] shadow-lg"
+                  : "bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              High Spenders
+            </button>
+            <button
+              onClick={() => setActiveTab("regulars")}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none transition-all cursor-pointer ${
+                activeTab === "regulars"
+                  ? "bg-[#fcd20b] text-[#111111] shadow-lg"
+                  : "bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Regulars
+            </button>
+            <button
+              onClick={() => setActiveTab("credits")}
+              className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-none transition-all cursor-pointer ${
+                activeTab === "credits"
+                  ? "bg-[#fcd20b] text-[#111111] shadow-lg"
+                  : "bg-transparent text-white/60 hover:text-white"
+              }`}
+            >
+              Pending Credits
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -191,37 +264,34 @@ const CustomerReports = () => {
             <thead>
               <tr className="bg-slate-50/50">
                 <th className="pl-10 py-6 text-[10px] font-black uppercase text-slate-500 border-b border-slate-100 text-left tracking-widest">
-                  Customer Identity
+                  Customer Name
                 </th>
                 <th className="py-6 text-[10px] font-black uppercase text-slate-500 border-b border-slate-100 text-left tracking-widest">
-                  Engagement
+                  {activeTab === "credits" ? "Pending Credit" : "Activity"}
                 </th>
                 <th className="py-6 text-[10px] font-black uppercase text-slate-500 border-b border-slate-100 text-left tracking-widest">
-                  Total Acquisition
+                  {activeTab === "credits" ? "Contact Info" : "Total Revenue"}
                 </th>
                 <th className="py-6 text-[10px] font-black uppercase text-slate-500 border-b border-slate-100 text-left tracking-widest">
                   Loyalty Status
                 </th>
                 <th className="pr-10 py-6 text-[10px] font-black uppercase text-slate-500 border-b border-slate-100 text-right tracking-widest">
-                  Lifecycle
+                  Status Code
                 </th>
               </tr>
             </thead>
             <tbody>
-              {data.highSpenders.length === 0 ? (
+              {activeList.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="py-24 text-center">
-                    <BarChart3
-                      size={48}
-                      className="mx-auto text-slate-100 mb-4"
-                    />
+                    <Activity size={48} className="mx-auto text-slate-100 mb-4 animate-pulse" />
                     <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                      No acquisition data available
+                      No matched customer records found under this filter
                     </p>
                   </td>
                 </tr>
               ) : (
-                data.highSpenders.map((row, i) => (
+                activeList.map((row) => (
                   <tr
                     key={row.id}
                     className="hover:bg-slate-50/50 transition-colors group"
@@ -234,42 +304,74 @@ const CustomerReports = () => {
                             .map((n) => n[0])
                             .join("")}
                         </div>
-                        <p className="font-black text-slate-900 m-0 tracking-tight text-base leading-none">
-                          {row.name}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="py-8 border-b border-slate-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner p-0.5">
-                          <div
-                            className="h-full bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"
-                            style={{
-                              width: `${Math.min((row.visits / 20) * 100, 100)}%`,
-                            }}
-                          ></div>
+                        <div>
+                          <p className="font-black text-slate-900 m-0 tracking-tight text-base leading-none">
+                            {row.name}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-bold m-0 mt-1 uppercase tracking-tight">
+                            Ref: CST-{row.id}
+                          </p>
                         </div>
-                        <span className="text-[11px] font-black text-slate-900 uppercase">
-                          {row.visits} Visits
-                        </span>
                       </div>
                     </td>
                     <td className="py-8 border-b border-slate-100">
-                      <p className="text-lg font-black text-blue-600 m-0 tracking-tighter">
-                        ${row.spent.toLocaleString()}
-                      </p>
+                      {activeTab === "credits" ? (
+                        <p className="text-lg font-black text-rose-600 m-0 tracking-tighter">
+                          ${row.creditBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                      ) : (
+                        <div className="flex items-center gap-4">
+                          <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner p-0.5">
+                            <div
+                              className="h-full bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                              style={{
+                                width: `${Math.min((row.visits / 20) * 100, 100)}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-[11px] font-black text-slate-900 uppercase">
+                            {row.visits} Purchases
+                          </span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-8 border-b border-slate-100">
+                      {activeTab === "credits" ? (
+                        <div>
+                          <p className="text-[11px] font-black text-slate-700 m-0 uppercase tracking-widest">
+                            {row.email}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 m-0 mt-1 tracking-tight">
+                            {row.phone}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-lg font-black text-blue-600 m-0 tracking-tighter">
+                          ${row.spent.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
                     </td>
                     <td className="py-8 border-b border-slate-100">
                       <span
-                        className={`text-[9px] font-black px-3 py-1.5 rounded-xl tracking-widest border uppercase shadow-sm ${row.spent > 5000 ? "bg-indigo-50 text-indigo-600 border-indigo-100" : "bg-slate-50 text-slate-600 border-slate-100"}`}
+                        className={`text-[9px] font-black px-3 py-1.5 rounded-xl tracking-widest border uppercase shadow-sm ${
+                          row.spent > 5000
+                            ? "bg-indigo-50 text-indigo-600 border-indigo-100"
+                            : "bg-slate-50 text-slate-600 border-slate-100"
+                        }`}
                       >
                         {row.spent > 5000 ? "PLATINUM" : "RECOGNIZED"}
                       </span>
                     </td>
                     <td className="pr-10 py-8 border-b border-slate-100 text-right">
-                      <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100 uppercase tracking-widest shadow-sm">
-                        VERIFIED
-                      </span>
+                      {activeTab === "credits" ? (
+                        <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-4 py-2 rounded-full border border-rose-100 uppercase tracking-widest shadow-sm">
+                          CREDIT DELINQUENT
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100 uppercase tracking-widest shadow-sm">
+                          VERIFIED
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

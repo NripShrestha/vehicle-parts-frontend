@@ -116,11 +116,11 @@ const App = () => {
 
       // Customer
       case "CustomerDash":
-        return <CustomerDashboard />;
+        return <CustomerDashboard user={user} setActiveScreen={setActiveScreen} />;
       case "History":
-        return <PurchaseHistory />;
+        return <PurchaseHistory user={user} />;
       case "Appointments":
-        return <AppointmentRequests />;
+        return <AppointmentRequests user={user} />;
       case "Marketplace":
         return <BuySell onExploreAsset={handleExploreAsset} />;
       case "AssetDetails":
@@ -133,7 +133,7 @@ const App = () => {
 
       // Common
       case "Profile":
-        return <Profile />;
+        return <Profile user={user} />;
       case "Settings":
         return <Settings />;
       case "Notifications":

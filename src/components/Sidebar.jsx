@@ -61,20 +61,20 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
   const roleInfo = getRoleInfo();
 
   const adminLinks = [
-    { id: "Financial", label: "Financial Matrix", icon: Home },
-    { id: "Staff", label: "Human Assets", icon: Users },
-    { id: "Parts", label: "Inventory Core", icon: Package },
-    { id: "Purchases", label: "Supply Chain", icon: Truck },
-    { id: "Vendors", label: "Vendor Node", icon: Settings },
+    { id: "Financial", label: "Financial Reports", icon: Home },
+    { id: "Staff", label: "Staff Management", icon: Users },
+    { id: "Parts", label: "Inventory", icon: Package },
+    { id: "Purchases", label: "Procurement", icon: Truck },
+    { id: "Vendors", label: "Suppliers", icon: Settings },
   ];
 
   const staffLinks = [
-    { id: "Registration", label: "Onboarding", icon: UserPlus },
+    { id: "Registration", label: "Register Customer", icon: UserPlus },
     { id: "SalesInvoice", label: "POS Terminal", icon: ShoppingCart },
-    { id: "CustomerSearch", label: "Intelligence", icon: Search },
-    { id: "CustomerDetails", label: "Profile Hub", icon: ClipboardList },
-    { id: "CustomerReports", label: "Analytics", icon: BarChart },
-    { id: "EmailInvoice", label: "Invoicing", icon: Mail },
+    { id: "CustomerSearch", label: "Customer Search", icon: Search },
+    { id: "CustomerDetails", label: "Customer Profiles", icon: ClipboardList },
+    { id: "CustomerReports", label: "Sales Reports", icon: BarChart },
+    { id: "EmailInvoice", label: "Email Invoice", icon: Mail },
   ];
 
   const NavItem = ({ id, label, icon: Icon }) => (
@@ -135,10 +135,10 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
           staffLinks.map((link) => <NavItem key={link.id} {...link} />)}
         {normalizedRole === "customer" && (
           <>
-            <NavItem id="CustomerDash" label="Performance" icon={Home} />
+            <NavItem id="CustomerDash" label="My Dashboard" icon={Home} />
             <NavItem id="Marketplace" label="Marketplace" icon={ShoppingBag} />
-            <NavItem id="History" label="Logbook" icon={Clock} />
-            <NavItem id="Appointments" label="Requests" icon={Calendar} />
+            <NavItem id="History" label="Purchase History" icon={Clock} />
+            <NavItem id="Appointments" label="Appointments" icon={Calendar} />
           </>
         )}
       </div>
@@ -168,7 +168,7 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
           className="w-full py-5 bg-[#fcd20b] text-[#111111] border-none rounded-full flex items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] cursor-pointer hover:bg-white transition-all shadow-xl font-oswald transform active:scale-95"
         >
           <LogOut size={16} />
-          Safe Termination
+          Logout
         </button>
       </div>
     </div>

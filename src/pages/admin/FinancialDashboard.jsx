@@ -138,10 +138,10 @@ const FinancialDashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16 animate-xtra">
         <div>
           <h2 className="text-5xl font-bold text-[#111111] m-0 tracking-tighter font-oswald italic uppercase">
-            FINANCIAL <span className="text-[#fcd20b]">INTELLIGENCE</span>
+            FINANCIAL <span className="text-[#fcd20b]">REPORTS</span>
           </h2>
           <p className="text-[#7a7a7a] text-sm font-medium mt-2 uppercase tracking-widest italic">
-            Command & Control Over Global Liquidity Streams
+            Overview of revenue, order history, and asset valuations
           </p>
         </div>
         <div className="flex gap-4">
@@ -149,7 +149,7 @@ const FinancialDashboard = () => {
             <Calendar size={16} /> DATA CYCLE: 30 DAYS
           </button>
           <button className="px-8 py-4 rounded-full bg-[#111111] text-[#fcd20b] text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-black shadow-2xl transition-all transform active:scale-95 font-oswald">
-            <Download size={16} /> EXPORT CRYPTO-LOG
+            <Download size={16} /> EXPORT TRANSACTION LOG
           </button>
         </div>
       </div>
@@ -164,7 +164,7 @@ const FinancialDashboard = () => {
           icon={DollarSign}
         />
         <StatCard
-          title="LIFETIME YIELD"
+          title="TOTAL ORDERS"
           value={stats.newOrders}
           change="+12.8%"
           isPositive={true}
@@ -281,7 +281,7 @@ const FinancialDashboard = () => {
         >
           <h4 className="w-full text-[#111111] font-bold uppercase tracking-tighter italic font-oswald text-xl mb-12 flex items-center gap-3">
             <PieChart size={24} className="text-[#fcd20b]" />
-            YIELD <span className="text-[#fcd20b]">METRICS</span>
+            REVENUE <span className="text-[#fcd20b]">METRICS</span>
           </h4>
 
           <div className="relative h-64 w-64 flex items-center justify-center mb-16 group">

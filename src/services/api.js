@@ -53,7 +53,7 @@ export const partsService = {
 
 export const customerService = {
   getAll: () => api.get("/Customers"),
-  getById: (id) => api.get(`/Customers/${id}`),
+  getById: (id) => api.get(`/Customers/${id}/details`),
   search: (term) => api.get(`/Customers/search?term=${term}`),
   registerWithVehicle: (data) =>
     api.post("/Customers/register-with-vehicle", data),
@@ -71,6 +71,19 @@ export const purchasesService = {
   getAll: () => api.get("/Purchases"),
   getById: (id) => api.get(`/Purchases/${id}`),
   create: (data) => api.post("/Purchases", data),
+};
+
+export const customerSelfServiceService = {
+  getHistory: () => api.get("/customer-self-service/history"),
+  getVehicles: () => api.get("/customer-self-service/vehicles"),
+  registerVehicle: (data) => api.post("/customer-self-service/vehicles", data),
+  bookAppointment: (data) => api.post("/customer-self-service/appointments", data),
+  getAppointments: () => api.get("/customer-self-service/appointments"),
+  cancelAppointment: (id) => api.put(`/customer-self-service/appointments/${id}/cancel`),
+  submitReview: (data) => api.post("/customer-self-service/reviews", data),
+  getReviews: () => api.get("/customer-self-service/reviews"),
+  requestPart: (data) => api.post("/customer-self-service/part-requests", data),
+  getPartRequests: () => api.get("/customer-self-service/part-requests"),
 };
 
 export default api;

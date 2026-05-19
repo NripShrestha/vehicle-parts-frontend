@@ -118,33 +118,30 @@ const VendorManagement = () => {
             SUPPLY <span className="text-[#fcd20b]">CHAIN</span>
           </h2>
           <p className="text-[#7a7a7a] text-sm font-medium uppercase tracking-widest italic">
-            Global Vendor Partnerships & Procurement Ecosystem
+            Manage Supplier Partnerships & Vendor Registry
           </p>
         </div>
         <div className="flex gap-4">
           <button className="px-8 py-4 rounded-full border-2 border-black/5 bg-white text-[#111111] text-[10px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-[#fcd20b] hover:border-[#fcd20b] transition-all shadow-sm font-oswald">
-            <Activity size={16} /> FULFILLMENT AUDIT
+            <Activity size={16} /> VENDOR AUDIT
           </button>
           <button
             className={`px-10 py-4 rounded-full font-oswald font-bold uppercase tracking-widest text-[10px] flex items-center gap-3 transition-all shadow-2xl transform active:scale-95 ${showAddForm ? "bg-[#111111] text-white hover:bg-black" : "bg-[#fcd20b] text-[#111111] hover:bg-[#111111] hover:text-[#fcd20b]"}`}
             onClick={() => setShowAddForm(!showAddForm)}
           >
             {showAddForm ? <X size={20} /> : <Plus size={20} />}
-            {showAddForm ? "CLOSE PORTAL" : "ADD STRATEGIC PARTNER"}
+            {showAddForm ? "CLOSE FORM" : "ADD NEW SUPPLIER"}
           </button>
         </div>
       </div>
 
       {/* Supply Chain Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16 animate-xtra">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16 animate-xtra">
         <VendorStat
           title="ACTIVE PARTNERS"
           value={vendors.length}
           icon={Truck}
         />
-        <VendorStat title="AVG LEAD TIME" value="3.2 DAYS" icon={Package} />
-        <VendorStat title="FULFILLMENT" value="98.4%" icon={ShieldCheck} />
-        <VendorStat title="ANNUAL SPEND" value="$24.5K" icon={Briefcase} />
       </div>
 
       {showAddForm && (
@@ -165,7 +162,7 @@ const VendorManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
-                  Vendor Identity
+                  Supplier Name
                 </label>
                 <input
                   type="text"
@@ -179,7 +176,7 @@ const VendorManagement = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
-                  Encryption Hub (Email)
+                  Email Address
                 </label>
                 <input
                   type="email"
@@ -193,7 +190,7 @@ const VendorManagement = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
-                  Com-Link (Phone)
+                  Phone Number
                 </label>
                 <input
                   type="text"
@@ -207,7 +204,7 @@ const VendorManagement = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
-                  Global Logistics Address
+                  Location Address
                 </label>
                 <input
                   type="text"
@@ -225,13 +222,13 @@ const VendorManagement = () => {
                 onClick={() => setShowAddForm(false)}
                 className="px-10 py-4 rounded-full bg-[#f8f8f8] text-[#7a7a7a] font-bold text-[10px] uppercase tracking-widest hover:bg-[#111111] hover:text-white transition-all font-oswald"
               >
-                DISCARD PARTNER
+                CANCEL
               </button>
               <button
                 type="submit"
                 className="px-12 py-4 rounded-full bg-[#fcd20b] text-[#111111] font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#fcd20b]/20 hover:bg-[#111111] hover:text-[#fcd20b] transition-all active:scale-95 font-oswald italic"
               >
-                ESTABLISH PARTNERSHIP
+                ADD SUPPLIER
               </button>
             </div>
           </form>
@@ -245,7 +242,7 @@ const VendorManagement = () => {
       >
         <div className="bg-[#111111] p-10 flex flex-col sm:flex-row justify-between items-center gap-6 text-white">
           <h4 className="font-bold m-0 font-oswald italic uppercase tracking-tighter text-xl">
-            STRATEGIC <span className="text-[#fcd20b]">PARTNER</span> REGISTRY
+            SUPPLIER / <span className="text-[#fcd20b]">VENDOR</span> REGISTRY
           </h4>
           <div className="bg-white/5 rounded-full px-8 py-3 flex items-center gap-4 border border-white/10 w-full sm:w-80 focus-within:bg-white focus-within:border-[#fcd20b] transition-all group">
             <Search
@@ -254,7 +251,7 @@ const VendorManagement = () => {
             />
             <input
               type="text"
-              placeholder="SEARCH PARTNERS..."
+              placeholder="SEARCH SUPPLIERS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none text-white text-[10px] font-bold outline-none w-full placeholder:text-white/20 group-focus-within:text-[#111111]"
@@ -267,19 +264,19 @@ const VendorManagement = () => {
             <thead>
               <tr className="bg-[#f8f8f8]">
                 <th className="pl-10 py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Vendor Identity
+                  Supplier / Vendor Name
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Com-Hub
+                  Contact Information
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Logistics Origin
+                  Location / Address
                 </th>
                 <th className="py-6 text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Performance
+                  Rating
                 </th>
                 <th className="pr-10 py-6 text-right text-[10px] uppercase text-[#7a7a7a] font-bold border-b border-black/5 tracking-[0.2em] font-oswald italic">
-                  Mgmt
+                  Actions
                 </th>
               </tr>
             </thead>

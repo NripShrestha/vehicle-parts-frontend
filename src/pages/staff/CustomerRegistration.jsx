@@ -26,7 +26,8 @@ const CustomerRegistration = () => {
     email: "",
     phoneNumber: "",
     address: "",
-    vehicleModel: "",
+    brand: "",
+    model: "",
     vehicleNumber: "",
     vehicleYear: new Date().getFullYear().toString(),
   });
@@ -46,7 +47,8 @@ const CustomerRegistration = () => {
         email: "",
         phoneNumber: "",
         address: "",
-        vehicleModel: "",
+        brand: "",
+        model: "",
         vehicleNumber: "",
         vehicleYear: new Date().getFullYear().toString(),
       });
@@ -67,10 +69,10 @@ const CustomerRegistration = () => {
       <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-16 animate-xtra">
         <div>
           <h2 className="text-5xl font-bold text-[#111111] m-0 tracking-tighter font-oswald italic uppercase leading-none mb-2">
-            CUSTOMER <span className="text-[#fcd20b]">ONBOARDING</span>
+            CUSTOMER <span className="text-[#fcd20b]">REGISTRATION</span>
           </h2>
           <p className="text-[#7a7a7a] text-sm font-medium uppercase tracking-widest italic">
-            Initialize Personal Credentials & Vehicle Technical Data
+            Register new customer details and their primary vehicle
           </p>
         </div>
         <button
@@ -117,7 +119,7 @@ const CustomerRegistration = () => {
           <div className="bg-[#111111] p-10 flex items-center gap-4 text-white">
             <User size={24} className="text-[#fcd20b]" />
             <h4 className="m-0 text-xl font-bold font-oswald italic uppercase tracking-tighter">
-              PERSONAL <span className="text-[#fcd20b]">IDENTITY</span>
+              PERSONAL <span className="text-[#fcd20b]">DETAILS</span>
             </h4>
           </div>
 
@@ -211,7 +213,7 @@ const CustomerRegistration = () => {
           <div className="bg-[#111111] p-10 flex items-center gap-4 text-white">
             <Car size={24} className="text-[#fcd20b]" />
             <h4 className="m-0 text-xl font-bold font-oswald italic uppercase tracking-tighter">
-              TECHNICAL <span className="text-[#fcd20b]">SPECS</span>
+              VEHICLE <span className="text-[#fcd20b]">SPECS</span>
             </h4>
           </div>
 
@@ -257,23 +259,44 @@ const CustomerRegistration = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
-                Manufacturer & Model
-              </label>
-              <div className="relative group">
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#111111]/30 group-focus-within:text-[#fcd20b] transition-colors">
-                  <ShieldCheck size={20} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
+                  Vehicle Brand
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#111111]/30 group-focus-within:text-[#fcd20b] transition-colors">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    name="brand"
+                    value={formData.brand}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. TOYOTA"
+                    className="w-full pl-16 pr-6 py-5 rounded-2xl bg-[#f8f8f8] border-2 border-transparent outline-none focus:bg-white focus:border-[#fcd20b] transition-all font-bold text-[#111111] placeholder:text-[#7a7a7a]/30 uppercase"
+                  />
                 </div>
-                <input
-                  type="text"
-                  name="vehicleModel"
-                  value={formData.vehicleModel}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g. TOYOTA CAMRY SE"
-                  className="w-full pl-16 pr-6 py-5 rounded-2xl bg-[#f8f8f8] border-2 border-transparent outline-none focus:bg-white focus:border-[#fcd20b] transition-all font-bold text-[#111111] placeholder:text-[#7a7a7a]/30 uppercase"
-                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-[#111111] uppercase tracking-[0.2em] ml-1 font-oswald italic">
+                  Vehicle Model
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[#111111]/30 group-focus-within:text-[#fcd20b] transition-colors">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <input
+                    type="text"
+                    name="model"
+                    value={formData.model}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g. CAMRY SE"
+                    className="w-full pl-16 pr-6 py-5 rounded-2xl bg-[#f8f8f8] border-2 border-transparent outline-none focus:bg-white focus:border-[#fcd20b] transition-all font-bold text-[#111111] placeholder:text-[#7a7a7a]/30 uppercase"
+                  />
+                </div>
               </div>
             </div>
 
@@ -283,11 +306,10 @@ const CustomerRegistration = () => {
               </div>
               <div>
                 <p className="m-0 text-[10px] font-bold text-[#111111] tracking-[0.1em] uppercase font-oswald italic">
-                  Data Integrity Protocol
+                  Data Validation
                 </p>
                 <p className="m-0 text-[11px] text-[#7a7a7a] mt-2 leading-relaxed font-bold uppercase tracking-tight">
-                  Profile will be automatically cross-referenced with regional
-                  vehicle registries for compatibility validation.
+                  Customer details and vehicle information will be securely saved to the database.
                 </p>
               </div>
             </div>

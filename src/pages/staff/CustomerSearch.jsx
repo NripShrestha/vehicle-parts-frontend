@@ -44,15 +44,12 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
       c.fullName.toLowerCase().includes(searchLower) ||
-      c.phoneNumber.includes(searchLower) ||
+      (c.phoneNumber || "").includes(searchLower) ||
       c.vehicles?.some((v) =>
-        v.vehiclePlateNumber.toLowerCase().includes(searchLower),
+        (v.vehicleNumber || "").toLowerCase().includes(searchLower),
       );
 
-    if (filterType === "All Vehicle Types") return matchesSearch;
-    return (
-      matchesSearch && c.vehicles?.some((v) => v.vehicleType === filterType)
-    );
+    return matchesSearch;
   });
 
   const handleViewProfile = (id) => {
@@ -66,11 +63,10 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
         <div>
           <h2 className="text-3xl font-black text-slate-900 m-0 tracking-tight">
-            Customer Intelligence Hub
+            Customer Database
           </h2>
           <p className="text-slate-500 text-sm font-medium mt-1">
-            Query customer databases using vehicle plates, phone numbers, or
-            unique identifiers.
+            Search for customers using name, vehicle plates, or phone numbers.
           </p>
         </div>
         <button
@@ -122,10 +118,10 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
             </div>
             <div>
               <h4 className="m-0 text-xs font-black uppercase tracking-widest">
-                Customer Registry
+                Customer List
               </h4>
               <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-wider">
-                Search results from primary database
+                Search results from customer database
               </p>
             </div>
           </div>
@@ -167,7 +163,7 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
                       className="text-blue-600 animate-spin mx-auto mb-4"
                     />
                     <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">
-                      Querying intelligence database...
+                      Loading customers...
                     </p>
                   </td>
                 </tr>
@@ -201,7 +197,7 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
                             {item.fullName}
                           </p>
                           <p className="text-[10px] text-slate-400 m-0 font-black uppercase tracking-widest mt-1">
-                            UID: CST-{item.customerID}
+                            ID: CST-{item.customerID}
                           </p>
                         </div>
                       </div>
@@ -214,16 +210,16 @@ const CustomerSearch = ({ setActiveScreen, setSelectedCustomerId }) => {
                           </div>
                           <div>
                             <p className="text-xs font-black text-slate-900 m-0 tracking-tight">
-                              {item.vehicles[0].vehiclePlateNumber}
+                              {item.vehicles[0].vehicleNumber}
                             </p>
                             <p className="text-[10px] text-slate-400 m-0 font-bold uppercase tracking-widest">
-                              {item.vehicles[0].vehicleModel}
+                              {item.vehicles[0].brand} {item.vehicles[0].model}
                             </p>
                           </div>
                         </div>
                       ) : (
                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                          No Vehicle Profile
+                          No Vehicles
                         </span>
                       )}
                     </td>
