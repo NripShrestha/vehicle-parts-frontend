@@ -124,6 +124,17 @@ export const purchasesService = {
 
 export const appointmentService = {
   getAll: () => api.get("/Appointments"),
+  updateStatus: (id, data) => api.put(`/Appointments/${id}/status`, data),
+};
+
+export const partRequestService = {
+  getAll: () => api.get("/PartRequests"),
+  updateStatus: (id, data) =>
+    api.put(`/PartRequests/${id}/status`, data),
+};
+
+export const reviewService = {
+  getServiceReviews: () => api.get("/Reviews/services"),
 };
 
 export const customerSelfServiceService = {

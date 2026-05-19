@@ -16,7 +16,9 @@ import {
   BarChart,
   Mail,
   ClipboardList,
+  PackagePlus,
   ShoppingBag,
+  MessageSquare,
   Zap,
   Shield,
   Activity,
@@ -68,6 +70,8 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
     { id: "Purchases", label: "Procurement", icon: Truck },
     { id: "Vendors", label: "Suppliers", icon: Settings },
     { id: "MaintenanceBookings", label: "Maintenance Bookings", icon: Wrench },
+    { id: "PartRequests", label: "Part Requests", icon: PackagePlus },
+    { id: "ServiceReviewsAdmin", label: "Service Reviews", icon: MessageSquare },
   ];
 
   const staffLinks = [
@@ -78,6 +82,7 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
     { id: "CustomerReports", label: "Sales Reports", icon: BarChart },
     { id: "EmailInvoice", label: "Email Invoice", icon: Mail },
     { id: "MaintenanceBookings", label: "Maintenance Bookings", icon: Wrench },
+    { id: "PartRequests", label: "Part Requests", icon: PackagePlus },
   ];
 
   const NavItem = ({ id, label, icon: Icon }) => (
@@ -142,6 +147,7 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
             <NavItem id="Marketplace" label="Marketplace" icon={ShoppingBag} />
             <NavItem id="History" label="Purchase History" icon={Clock} />
             <NavItem id="Appointments" label="Appointments" icon={Calendar} />
+            <NavItem id="ServiceReviews" label="Service Reviews" icon={MessageSquare} />
           </>
         )}
       </div>

@@ -10,6 +10,7 @@ import StaffManagement from "./pages/admin/StaffManagement";
 import PartsManagement from "./pages/admin/PartsManagement";
 import PurchaseInvoice from "./pages/admin/PurchaseInvoice";
 import VendorManagement from "./pages/admin/VendorManagement";
+import ServiceReviewsAdmin from "./pages/admin/ServiceReviews";
 
 // Staff Pages
 import CustomerRegistration from "./pages/staff/CustomerRegistration";
@@ -20,6 +21,7 @@ import CustomerReports from "./pages/staff/CustomerReports";
 import EmailInvoice from "./pages/staff/EmailInvoice";
 import StaffDashboard from "./pages/staff/StaffDashboard";
 import MaintenanceBookings from "./pages/staff/MaintenanceBookings";
+import PartRequests from "./pages/staff/PartRequests";
 
 // Customer Pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -27,6 +29,7 @@ import PurchaseHistory from "./pages/customer/PurchaseHistory";
 import AppointmentRequests from "./pages/customer/AppointmentRequests";
 import BuySell from "./pages/customer/BuySell";
 import AssetDetails from "./pages/customer/AssetDetails";
+import ServiceReviews from "./pages/customer/ServiceReviews";
 
 // Common Pages
 import Profile from "./pages/common/Profile";
@@ -48,9 +51,12 @@ const SCREEN_ROUTES = {
   CustomerReports: { path: "/staff/reports", roles: ["staff"] },
   EmailInvoice: { path: "/staff/email-invoice", roles: ["staff"] },
   MaintenanceBookings: { path: "/staff/maintenance-bookings", roles: ["staff", "admin"] },
+  PartRequests: { path: "/staff/part-requests", roles: ["staff", "admin"] },
+  ServiceReviewsAdmin: { path: "/admin/service-reviews", roles: ["admin"] },
   CustomerDash: { path: "/customer/dashboard", roles: ["customer"] },
   History: { path: "/customer/history", roles: ["customer"] },
   Appointments: { path: "/customer/appointments", roles: ["customer"] },
+  ServiceReviews: { path: "/customer/service-reviews", roles: ["customer"] },
   Marketplace: { path: "/customer/marketplace", roles: ["customer"] },
   AssetDetails: { path: "/customer/asset-details", roles: ["customer"] },
   Profile: { path: "/profile" },
@@ -226,6 +232,8 @@ const App = () => {
         return <PurchaseInvoice />;
       case "Vendors":
         return <VendorManagement />;
+      case "ServiceReviewsAdmin":
+        return <ServiceReviewsAdmin />;
 
       // Staff
       case "StaffDash":
@@ -254,6 +262,8 @@ const App = () => {
         return <EmailInvoice />;
       case "MaintenanceBookings":
         return <MaintenanceBookings />;
+      case "PartRequests":
+        return <PartRequests />;
 
       // Customer
       case "CustomerDash":
@@ -262,6 +272,8 @@ const App = () => {
         return <PurchaseHistory user={user} />;
       case "Appointments":
         return <AppointmentRequests user={user} />;
+      case "ServiceReviews":
+        return <ServiceReviews />;
       case "Marketplace":
         return (
           <BuySell

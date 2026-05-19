@@ -356,8 +356,11 @@ const Profile = ({ user }) => {
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
                           Comments / Suggestions
                         </span>
+                        <p className="text-[10px] text-slate-400 font-semibold m-0 mb-2">
+                          For completed appointments, use the Service Reviews page in your portal menu.
+                        </p>
                         <textarea
-                          placeholder="Tell us about your experience with our services, staff, or parts catalog..."
+                          placeholder="General feedback about the portal, staff, or parts..."
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
                           className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-xs font-bold text-slate-800 h-24 resize-none transition-all"
@@ -420,6 +423,12 @@ const Profile = ({ user }) => {
                                 {new Date(rev.reviewDate).toLocaleDateString()}
                               </span>
                             </div>
+                            {rev.serviceType && (
+                              <p className="m-0 text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">
+                                {rev.serviceType}
+                                {rev.vehicleName ? ` · ${rev.vehicleName}` : ""}
+                              </p>
+                            )}
                             <p className="m-0 text-xs font-semibold text-slate-700 leading-relaxed">
                               {rev.comment}
                             </p>
