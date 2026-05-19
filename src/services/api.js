@@ -1,6 +1,17 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5051/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5051/api";
+
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
+
+export const resolvePartImageUrl = (imageUrl) => {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    return imageUrl;
+  }
+  return `${API_ORIGIN}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,7 +20,6 @@ const api = axios.create({
   },
 });
 
-// Add a request interceptor to include the JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -20,6 +30,34 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error),
 );
+
+const multipartConfig = {
+  headers: { "Content-Type": "multipart/form-data" },
+};
+
+export const buildPartFormData = (fields, imageFile) => {
+  const formData = new FormData();
+  formData.append("VendorID", String(fields.vendorID ?? fields.VendorID));
+  formData.append("PartName", fields.partName ?? fields.PartName ?? "");
+  formData.append("Category", fields.category ?? fields.Category ?? "");
+  formData.append("CostPrice", String(fields.costPrice ?? fields.CostPrice ?? 0));
+  formData.append(
+    "SellingPrice",
+    String(fields.sellingPrice ?? fields.SellingPrice ?? 0),
+  );
+  formData.append(
+    "StockQuantity",
+    String(fields.stockQuantity ?? fields.StockQuantity ?? 0),
+  );
+  formData.append(
+    "ReorderLevel",
+    String(fields.reorderLevel ?? fields.ReorderLevel ?? 10),
+  );
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
+  return formData;
+};
 
 export const authService = {
   login: (credentials) => api.post("/Auth/login", credentials),
@@ -49,6 +87,16 @@ export const partsService = {
   update: (id, data) => api.put(`/Parts/${id}`, data),
   delete: (id) => api.delete(`/Parts/${id}`),
   getLowStock: () => api.get("/Parts/low-stock"),
+  createWithImage: (formData) =>
+    api.post("/Parts/with-image", formData, multipartConfig),
+  updateWithImage: (id, formData) =>
+    api.put(`/Parts/${id}/with-image`, formData, multipartConfig),
+  uploadImage: (id, file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return api.post(`/Parts/${id}/image`, formData, multipartConfig);
+  },
+  deleteImage: (id) => api.delete(`/Parts/${id}/image`),
 };
 
 export const customerService = {
@@ -80,11 +128,14 @@ export const customerSelfServiceService = {
   getHistory: () => api.get("/customer-self-service/history"),
   getVehicles: () => api.get("/customer-self-service/vehicles"),
   registerVehicle: (data) => api.post("/customer-self-service/vehicles", data),
-  updateVehicle: (id, data) => api.put(`/customer-self-service/vehicles/${id}`, data),
+  updateVehicle: (id, data) =>
+    api.put(`/customer-self-service/vehicles/${id}`, data),
   deleteVehicle: (id) => api.delete(`/customer-self-service/vehicles/${id}`),
-  bookAppointment: (data) => api.post("/customer-self-service/appointments", data),
+  bookAppointment: (data) =>
+    api.post("/customer-self-service/appointments", data),
   getAppointments: () => api.get("/customer-self-service/appointments"),
-  cancelAppointment: (id) => api.put(`/customer-self-service/appointments/${id}/cancel`),
+  cancelAppointment: (id) =>
+    api.put(`/customer-self-service/appointments/${id}/cancel`),
   submitReview: (data) => api.post("/customer-self-service/reviews", data),
   getReviews: () => api.get("/customer-self-service/reviews"),
   requestPart: (data) => api.post("/customer-self-service/part-requests", data),

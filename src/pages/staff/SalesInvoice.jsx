@@ -41,6 +41,7 @@ const SalesInvoice = () => {
   const [creditAmount, setCreditAmount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [partSearch, setPartSearch] = useState("");
+  const [checkoutNotice, setCheckoutNotice] = useState(null);
 
   useEffect(() => {
     loadInitialData();
@@ -140,8 +141,16 @@ const SalesInvoice = () => {
           quantity: item.quantity,
         })),
       };
-      await salesService.createInvoice(invoiceData);
-      alert("Invoice created successfully!");
+      const response = await salesService.createInvoice(invoiceData);
+      const created = response.data;
+      const invoiceId = created?.salesInvoiceID;
+      setCheckoutNotice({
+        type: "success",
+        invoiceId,
+        message: invoiceId
+          ? `Invoice #INV-${String(invoiceId).padStart(5, "0")} created. The server automatically emails the customer when SMTP is configured; use Email Invoice to resend or check mock delivery.`
+          : "Invoice created successfully. The server sends the invoice email automatically when configured.",
+      });
       setSalesItems([]);
       setSelectedCustomer(null);
       setPaymentStatus("Paid");
@@ -203,6 +212,30 @@ const SalesInvoice = () => {
           </button>
         </div>
       </div>
+
+      {checkoutNotice && (
+        <div
+          className={`mb-10 p-5 rounded-2xl border-l-4 text-xs font-bold flex gap-3 items-start ${
+            checkoutNotice.type === "success"
+              ? "bg-emerald-50 border-emerald-500 text-emerald-900"
+              : "bg-red-50 border-red-500 text-red-900"
+          }`}
+        >
+          <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+          <div>
+            <p className="m-0">{checkoutNotice.message}</p>
+            {checkoutNotice.invoiceId && (
+              <button
+                type="button"
+                onClick={() => setCheckoutNotice(null)}
+                className="mt-2 text-[10px] uppercase tracking-widest underline opacity-70"
+              >
+                Dismiss
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 flex flex-col gap-10">

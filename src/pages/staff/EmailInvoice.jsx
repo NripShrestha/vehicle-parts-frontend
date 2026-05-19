@@ -27,6 +27,7 @@ const EmailInvoice = () => {
   const [sendingId, setSendingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [noticeType, setNoticeType] = useState("success");
 
   const loadInvoices = async () => {
     try {
@@ -35,7 +36,9 @@ const EmailInvoice = () => {
       const response = await salesService.getAllInvoices();
       const invoiceRows = response.data || [];
       setInvoices(invoiceRows);
-      setSelectedInvoiceId((currentId) => currentId || invoiceRows[0]?.salesInvoiceID || null);
+      setSelectedInvoiceId(
+        (currentId) => currentId || invoiceRows[0]?.salesInvoiceID || null,
+      );
     } catch (err) {
       setError(err.response?.data?.message || "Unable to load invoices.");
     } finally {
@@ -70,8 +73,24 @@ const EmailInvoice = () => {
       setSendingId(invoiceId);
       setError("");
       setSuccess("");
-      await salesService.sendEmail(invoiceId);
-      setSuccess(`Invoice #INV-${String(invoiceId).padStart(5, "0")} was emailed successfully.`);
+      const response = await salesService.sendEmail(invoiceId);
+      const data = response.data || {};
+      const invoiceLabel = `#INV-${String(invoiceId).padStart(5, "0")}`;
+
+      if (data.deliveryMode === "mock" || data.deliveredToInbox === false) {
+        setNoticeType("warning");
+        setSuccess(
+          data.message ||
+            `Invoice ${invoiceLabel} was saved locally only (mock SMTP). Not delivered to the customer inbox.` +
+              (data.mockFilePath ? ` File: ${data.mockFilePath}` : ""),
+        );
+      } else {
+        setNoticeType("success");
+        setSuccess(
+          data.message ||
+            `Invoice ${invoiceLabel} was delivered to the customer's inbox.`,
+        );
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -90,7 +109,8 @@ const EmailInvoice = () => {
             Dispatch Digital Invoice
           </h2>
           <p className="text-slate-500 text-sm font-medium mt-1">
-            Select a saved sales invoice and send the backend-generated invoice email.
+            Select a saved sales invoice and send the backend-generated invoice
+            email (SMTP or local mock preview).
           </p>
         </div>
         <button
@@ -102,15 +122,21 @@ const EmailInvoice = () => {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-800 text-xs font-bold flex gap-2 items-center">
-          <AlertCircle size={16} className="shrink-0" />
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-800 text-xs font-bold flex gap-2 items-start">
+          <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-xl text-green-800 text-xs font-bold flex gap-2 items-center">
-          <CheckCircle2 size={16} className="shrink-0" />
+        <div
+          className={`mb-6 p-4 border-l-4 rounded-r-xl text-xs font-bold flex gap-2 items-start ${
+            noticeType === "warning"
+              ? "bg-amber-50 border-amber-500 text-amber-900"
+              : "bg-green-50 border-green-500 text-green-800"
+          }`}
+        >
+          <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
           <span>{success}</span>
         </div>
       )}
@@ -142,7 +168,10 @@ const EmailInvoice = () => {
           <div className="max-h-[620px] overflow-y-auto">
             {loading ? (
               <div className="py-20 text-center">
-                <Loader2 size={36} className="mx-auto text-blue-500 animate-spin mb-4" />
+                <Loader2
+                  size={36}
+                  className="mx-auto text-blue-500 animate-spin mb-4"
+                />
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Loading invoice queue...
                 </p>
@@ -195,7 +224,7 @@ const EmailInvoice = () => {
                   Email Preview
                 </h4>
                 <p className="text-slate-400 text-[10px] font-bold mt-1 uppercase tracking-wider">
-                  Backend template and SMTP/mock delivery
+                  Backend HTML template · SMTP or mock file
                 </p>
               </div>
             </div>
@@ -271,8 +300,13 @@ const EmailInvoice = () => {
                   </thead>
                   <tbody>
                     {selectedInvoice.items?.map((item) => (
-                      <tr key={item.salesInvoiceItemID} className="border-t border-slate-100">
-                        <td className="p-4 font-bold text-slate-800">{item.partName}</td>
+                      <tr
+                        key={item.salesInvoiceItemID}
+                        className="border-t border-slate-100"
+                      >
+                        <td className="p-4 font-bold text-slate-800">
+                          {item.partName}
+                        </td>
                         <td className="p-4 text-right font-bold text-slate-500">
                           {item.quantitySold}
                         </td>
@@ -293,7 +327,9 @@ const EmailInvoice = () => {
                   </div>
                   <div className="flex justify-between text-emerald-600">
                     <span>Discount</span>
-                    <span>-{formatCurrency(selectedInvoice.discountAmount)}</span>
+                    <span>
+                      -{formatCurrency(selectedInvoice.discountAmount)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-amber-600">
                     <span>Outstanding Credit</span>
@@ -305,6 +341,13 @@ const EmailInvoice = () => {
                   </div>
                 </div>
               </div>
+
+              <p className="mt-8 text-[11px] text-slate-500 font-medium leading-relaxed">
+                The API sends a styled HTML invoice. If SMTP is not configured
+                (UseMock or missing credentials), the email is saved under{" "}
+                <code className="text-slate-700">SentEmails/</code> on the server
+                instead of the customer inbox.
+              </p>
             </div>
           )}
         </div>

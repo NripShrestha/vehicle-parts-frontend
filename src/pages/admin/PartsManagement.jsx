@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Search,
@@ -23,7 +23,15 @@ import {
   Truck,
 } from "lucide-react";
 import Pagination from "../../components/Pagination";
-import { partsService, vendorService } from "../../services/api";
+import {
+  partsService,
+  vendorService,
+  buildPartFormData,
+  resolvePartImageUrl,
+} from "../../services/api";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 const InventoryStat = ({ title, value, icon: Icon }) => (
   <div className="bg-white rounded-[30px] p-8 shadow-xl border border-black/5 transition-all hover:-translate-y-1 duration-500 group overflow-hidden relative">
@@ -47,12 +55,18 @@ const InventoryStat = ({ title, value, icon: Icon }) => (
 );
 
 const PartsManagement = () => {
+  const fileInputRef = useRef(null);
   const [parts, setParts] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPartId, setEditingPartId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [existingImageUrl, setExistingImageUrl] = useState(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [formData, setFormData] = useState({
     PartName: "",
     Category: "Engine Components",
@@ -91,45 +105,123 @@ const PartsManagement = () => {
     });
   };
 
+  const clearImageState = () => {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    setExistingImageUrl(null);
+    setRemoveImage(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      alert("Only PNG and JPG images are allowed.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      alert("Image file size cannot exceed 10MB.");
+      e.target.value = "";
+      return;
+    }
+
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setRemoveImage(false);
+  };
+
+  const handleRemoveImage = () => {
+    if (imagePreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+    setRemoveImage(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const getApiErrorMessage = (error, fallback) => {
+    const data = error.response?.data;
+    if (data?.message) return data.message;
+    if (data?.errors) {
+      return Object.values(data.errors).flat().join("\n");
+    }
+    return fallback;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.VendorID)
+    if (!formData.VendorID) {
       return alert("Please select a strategic vendor partner.");
+    }
 
+    setSubmitting(true);
     try {
-      const submissionData = {
+      const fields = {
         ...formData,
-        PartID: editingPartId || 0,
-        VendorID: parseInt(formData.VendorID),
+        VendorID: parseInt(formData.VendorID, 10),
       };
+
       if (editingPartId) {
-        await partsService.update(editingPartId, submissionData);
+        if (imageFile) {
+          const form = buildPartFormData(fields, imageFile);
+          await partsService.updateWithImage(editingPartId, form);
+        } else {
+          const submissionData = {
+            ...fields,
+            partID: editingPartId,
+            PartID: editingPartId,
+          };
+          if (removeImage) {
+            await partsService.deleteImage(editingPartId);
+          }
+          await partsService.update(editingPartId, submissionData);
+        }
+      } else if (imageFile) {
+        const form = buildPartFormData(fields, imageFile);
+        await partsService.createWithImage(form);
       } else {
-        await partsService.create(submissionData);
+        await partsService.create({
+          ...fields,
+          partID: 0,
+          PartID: 0,
+          imageUrl: null,
+        });
       }
-      setShowAddForm(false);
-      setEditingPartId(null);
+
+      resetForm();
       fetchData();
-      setFormData({
-        PartName: "",
-        Category: "Engine Components",
-        SellingPrice: 0,
-        CostPrice: 0,
-        StockQuantity: 0,
-        ReorderLevel: 10,
-        VendorID: "",
-      });
     } catch (error) {
-      const errorMsg = error.response?.data?.errors
-        ? Object.values(error.response.data.errors).flat().join("\n")
-        : "Critical system failure during asset registration.";
-      alert("Validation Error:\n" + errorMsg);
+      alert(
+        "Validation Error:\n" +
+          getApiErrorMessage(
+            error,
+            "Critical system failure during asset registration.",
+          ),
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const resetForm = () => {
     setEditingPartId(null);
     setShowAddForm(false);
+    clearImageState();
     setFormData({
       PartName: "",
       Category: "Engine Components",
@@ -142,6 +234,7 @@ const PartsManagement = () => {
   };
 
   const handleEdit = (part) => {
+    clearImageState();
     setEditingPartId(part.partID);
     setFormData({
       PartName: part.partName || "",
@@ -152,8 +245,13 @@ const PartsManagement = () => {
       ReorderLevel: part.reorderLevel || 10,
       VendorID: String(part.vendorID || ""),
     });
+    if (part.imageUrl) {
+      setExistingImageUrl(resolvePartImageUrl(part.imageUrl));
+    }
     setShowAddForm(true);
   };
+
+  const displayPreview = imagePreview || (removeImage ? null : existingImageUrl);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this part?")) {
@@ -245,17 +343,64 @@ const PartsManagement = () => {
           <form onSubmit={handleSubmit} className="p-12">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-1">
-                <div className="h-full border-4 border-dashed border-black/5 rounded-[30px] flex flex-col items-center justify-center bg-[#f8f8f8] hover:bg-white hover:border-[#fcd20b] transition-all cursor-pointer group p-10">
-                  <div className="w-20 h-20 rounded-[24px] bg-white shadow-md flex items-center justify-center text-[#111111]/30 group-hover:bg-[#fcd20b] group-hover:text-[#111111] transition-all duration-500">
-                    <Upload size={36} />
-                  </div>
-                  <p className="text-[11px] font-bold text-[#7a7a7a] mt-6 tracking-[0.2em] uppercase text-center font-oswald">
-                    UPLOAD ASSET PHOTO
-                  </p>
-                  <p className="text-[9px] text-[#7a7a7a]/40 mt-1 font-bold uppercase">
-                    PNG, JPG · MAX 10MB
-                  </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="h-full min-h-[280px] border-4 border-dashed border-black/5 rounded-[30px] flex flex-col items-center justify-center bg-[#f8f8f8] hover:bg-white hover:border-[#fcd20b] transition-all cursor-pointer group p-6 overflow-hidden relative"
+                >
+                  {displayPreview ? (
+                    <>
+                      <img
+                        src={displayPreview}
+                        alt="Part preview"
+                        className="absolute inset-0 w-full h-full object-cover opacity-90"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 z-10">
+                        <Upload size={28} className="text-white" />
+                        <p className="text-[10px] font-bold text-white uppercase tracking-widest font-oswald">
+                          Change photo
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 rounded-[24px] bg-white shadow-md flex items-center justify-center text-[#111111]/30 group-hover:bg-[#fcd20b] group-hover:text-[#111111] transition-all duration-500">
+                        <Upload size={36} />
+                      </div>
+                      <p className="text-[11px] font-bold text-[#7a7a7a] mt-6 tracking-[0.2em] uppercase text-center font-oswald">
+                        UPLOAD ASSET PHOTO
+                      </p>
+                      <p className="text-[9px] text-[#7a7a7a]/40 mt-1 font-bold uppercase">
+                        PNG, JPG · MAX 10MB
+                      </p>
+                    </>
+                  )}
                 </div>
+                {(displayPreview || (existingImageUrl && !removeImage)) && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemoveImage();
+                    }}
+                    className="mt-4 w-full py-3 rounded-2xl border-2 border-rose-200 text-rose-600 text-[10px] font-bold uppercase tracking-widest font-oswald hover:bg-rose-50 transition-all"
+                  >
+                    Remove photo
+                  </button>
+                )}
               </div>
               <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
@@ -376,8 +521,10 @@ const PartsManagement = () => {
               </button>
               <button
                 type="submit"
-                className="px-12 py-4 rounded-full bg-[#fcd20b] text-[#111111] font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#fcd20b]/20 hover:bg-[#111111] hover:text-[#fcd20b] transition-all active:scale-95 font-oswald italic"
+                disabled={submitting}
+                className="px-12 py-4 rounded-full bg-[#fcd20b] text-[#111111] font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#fcd20b]/20 hover:bg-[#111111] hover:text-[#fcd20b] transition-all active:scale-95 font-oswald italic disabled:opacity-50 flex items-center gap-2"
               >
+                {submitting && <Loader2 size={16} className="animate-spin" />}
                 {editingPartId ? "UPDATE CATALOG ITEM" : "PUBLISH TO CATALOG"}
               </button>
             </div>
@@ -459,8 +606,16 @@ const PartsManagement = () => {
                   >
                     <td className="pl-10 py-8 border-b border-black/5">
                       <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-[20px] bg-[#f8f8f8] border border-black/5 flex items-center justify-center text-[#111111]/30 shadow-sm group-hover:scale-110 group-hover:bg-[#fcd20b] group-hover:text-[#111111] transition-all duration-500">
-                          <ImageIcon size={24} />
+                        <div className="w-16 h-16 rounded-[20px] bg-[#f8f8f8] border border-black/5 flex items-center justify-center text-[#111111]/30 shadow-sm group-hover:scale-110 overflow-hidden transition-all duration-500">
+                          {item.imageUrl ? (
+                            <img
+                              src={resolvePartImageUrl(item.imageUrl)}
+                              alt={item.partName || "Part"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <ImageIcon size={24} />
+                          )}
                         </div>
                         <div>
                           <p className="font-bold text-lg text-[#111111] m-0 leading-none mb-2 font-oswald italic uppercase tracking-tighter">
