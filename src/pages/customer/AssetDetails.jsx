@@ -27,18 +27,18 @@ const AssetDetails = ({ asset, onBack }) => {
       <div className="flex justify-between items-center mb-8">
         <button
           onClick={onBack}
-          className="flex items-center gap-3 text-text-muted hover:text-blue-500 transition-all font-extrabold text-xs uppercase tracking-widest group"
+          className="flex items-center gap-3 text-slate-500 hover:text-blue-600 transition-all font-bold text-xs uppercase tracking-widest group"
         >
-          <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
+          <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
             <ArrowLeft size={18} />
           </div>
           Back to Marketplace
         </button>
         <div className="flex gap-4">
-          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-text-muted hover:text-red-500 transition-all hover:bg-red-50">
+          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all hover:bg-red-50">
             <Heart size={18} />
           </button>
-          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-text-muted hover:text-blue-500 transition-all hover:bg-blue-50">
+          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all hover:bg-blue-50">
             <Share2 size={18} />
           </button>
         </div>
@@ -68,13 +68,13 @@ const AssetDetails = ({ asset, onBack }) => {
             </div>
             <div className="p-10">
               <div className="flex flex-wrap gap-3 mb-6">
-                <span className="px-3 py-1 bg-blue-50 text-blue-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg border border-blue-100">
+                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg border border-blue-100">
                   {asset.type}
                 </span>
                 {asset.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-3 py-1 bg-slate-50 text-text-muted text-[10px] font-black uppercase tracking-[0.2em] rounded-lg border border-slate-100"
+                    className="px-3 py-1.5 bg-slate-100/70 text-slate-600 text-[10px] font-bold uppercase tracking-[0.15em] rounded-lg border border-slate-200/50"
                   >
                     {tag}
                   </span>
@@ -83,7 +83,7 @@ const AssetDetails = ({ asset, onBack }) => {
               <h1 className="text-4xl font-black text-text-main tracking-tighter m-0 mb-4">
                 {asset.name}
               </h1>
-              <p className="text-lg text-text-muted font-medium leading-relaxed max-w-2xl">
+              <p className="text-lg text-slate-600 font-medium leading-relaxed max-w-2xl">
                 Precision-engineered {asset.type.toLowerCase()} featuring
                 advanced performance metrics and certified quality assurance.
                 This asset has been rigorously tested by our technical logistics
@@ -108,7 +108,7 @@ const AssetDetails = ({ asset, onBack }) => {
                   size={20}
                   className="text-blue-500 mb-3 group-hover:scale-110 transition-transform"
                 />
-                <p className="m-0 text-[10px] font-black text-text-muted uppercase tracking-widest leading-none mb-1">
+                <p className="m-0 text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">
                   {spec.label}
                 </p>
                 <p className="m-0 text-sm font-black text-text-main tracking-tight">
@@ -125,7 +125,7 @@ const AssetDetails = ({ asset, onBack }) => {
               Strategic Overview
             </h4>
             <div className="space-y-6">
-              <p className="text-text-muted font-medium leading-loose text-[15px]">
+              <p className="text-slate-600 font-medium leading-loose text-[15px]">
                 The {asset.name} represents the pinnacle of modern automotive
                 design, integrating high-performance components with
                 cutting-edge software. Every unit in our marketplace undergoas a
@@ -138,21 +138,21 @@ const AssetDetails = ({ asset, onBack }) => {
                   </h5>
                   <ul className="space-y-3 p-0 m-0 list-none">
                     <li className="flex justify-between text-sm">
-                      <span className="text-text-muted font-bold">
+                      <span className="text-slate-500 font-bold">
                         Certification
                       </span>{" "}
-                      <span className="font-black text-green-500 uppercase tracking-tighter">
+                      <span className="font-black text-green-600 uppercase tracking-tighter">
                         Gold Standard
                       </span>
                     </li>
                     <li className="flex justify-between text-sm">
-                      <span className="text-text-muted font-bold">
+                      <span className="text-slate-500 font-bold">
                         Ownership
                       </span>{" "}
                       <span className="font-black">Single Node</span>
                     </li>
                     <li className="flex justify-between text-sm">
-                      <span className="text-text-muted font-bold">
+                      <span className="text-slate-500 font-bold">
                         Warranty
                       </span>{" "}
                       <span className="font-black">24 Months</span>
@@ -164,11 +164,11 @@ const AssetDetails = ({ asset, onBack }) => {
                     Security Features
                   </h5>
                   <ul className="space-y-3 p-0 m-0 list-none">
-                    <li className="flex items-center gap-2 text-sm font-bold text-text-muted">
+                    <li className="flex items-center gap-2 text-sm font-bold text-slate-600">
                       <ShieldCheck size={16} className="text-blue-500" />{" "}
                       Anti-Theft GPS Node
                     </li>
-                    <li className="flex items-center gap-2 text-sm font-bold text-text-muted">
+                    <li className="flex items-center gap-2 text-sm font-bold text-slate-600">
                       <ShieldCheck size={16} className="text-blue-500" /> Remote
                       Diagnostics
                     </li>

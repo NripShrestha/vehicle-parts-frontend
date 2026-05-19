@@ -101,7 +101,7 @@ const BuySell = ({ onExploreAsset }) => {
           <h2 className="text-3xl font-extrabold text-text-main m-0 tracking-tighter leading-none">
             Marketplace
           </h2>
-          <p className="text-text-muted text-[15px] font-medium mt-2 opacity-80">
+          <p className="text-slate-500 text-[15px] font-medium mt-2">
             Browse parts available to buy and request items not currently in stock.
           </p>
         </div>
@@ -217,19 +217,19 @@ const BuySell = ({ onExploreAsset }) => {
               </div>
               <div className="p-6 flex flex-col flex-1">
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="text-[9px] font-extrabold text-blue-500 bg-blue-50 px-2.5 py-1 rounded-md uppercase tracking-widest border border-blue-100">
+                  <span className="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md uppercase tracking-widest border border-blue-100">
                     {item.type}
                   </span>
                   {item.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[9px] font-extrabold text-text-muted bg-slate-50 px-2.5 py-1 rounded-md uppercase tracking-widest border border-slate-100"
+                      className="text-[9px] font-bold text-slate-600 bg-slate-100/80 px-2.5 py-1 rounded-md uppercase tracking-widest border border-slate-200/60"
                     >
                       {tag}
                     </span>
                   ))}
                 </div>
-                <h3 className="m-0 text-xl font-extrabold text-text-main flex-1 tracking-tighter leading-tight mb-6 group-hover:text-blue-500 transition-colors">
+                <h3 className="m-0 text-xl font-extrabold text-slate-900 flex-1 tracking-tighter leading-tight mb-6 group-hover:text-blue-600 transition-colors">
                   {item.name}
                 </h3>
                 <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50">
