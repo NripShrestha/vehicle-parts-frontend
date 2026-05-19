@@ -85,6 +85,7 @@ const App = () => {
   const [activeScreen, setActiveScreen] = useState("Financial");
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [cart, setCart] = useState([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -154,7 +155,57 @@ const App = () => {
     setUser(null);
     setSelectedAsset(null);
     setSelectedCustomerId(null);
+    setCart([]);
     window.history.replaceState(null, "", "/login");
+  };
+
+  const addToCart = (part, quantity = 1) => {
+    setCart((previous) => {
+      const existing = previous.find((item) => item.partID === part.partID);
+      if (existing) {
+        return previous.map((item) =>
+          item.partID === part.partID
+            ? {
+                ...item,
+                quantity: Math.min(
+                  item.quantity + quantity,
+                  part.stockQuantity ?? item.stockQuantity,
+                ),
+              }
+            : item,
+        );
+      }
+      return [
+        ...previous,
+        {
+          ...part,
+          quantity: Math.min(quantity, part.stockQuantity ?? quantity),
+        },
+      ];
+    });
+  };
+
+  const updateCartQty = (partID, quantity) => {
+    setCart((previous) =>
+      previous
+        .map((item) => {
+          if (item.partID !== partID) return item;
+          const maxQty = item.stockQuantity ?? quantity;
+          const nextQty = Math.min(Math.max(1, quantity), maxQty);
+          return { ...item, quantity: nextQty };
+        })
+        .filter((item) => item.quantity > 0),
+    );
+  };
+
+  const removeFromCart = (partID) => {
+    setCart((previous) => previous.filter((item) => item.partID !== partID));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const handlePurchaseComplete = () => {
+    navigateToScreen("History");
   };
 
   const handleExploreAsset = (asset) => {
@@ -212,15 +263,35 @@ const App = () => {
       case "Appointments":
         return <AppointmentRequests user={user} />;
       case "Marketplace":
-        return <BuySell onExploreAsset={handleExploreAsset} />;
+        return (
+          <BuySell
+            onExploreAsset={handleExploreAsset}
+            cart={cart}
+            onAddToCart={addToCart}
+            onUpdateCartQty={updateCartQty}
+            onRemoveFromCart={removeFromCart}
+            onClearCart={clearCart}
+            onPurchaseComplete={handlePurchaseComplete}
+          />
+        );
       case "AssetDetails":
         return selectedAsset ? (
           <AssetDetails
             asset={selectedAsset}
             onBack={() => navigateToScreen("Marketplace")}
+            onAddToCart={addToCart}
+            onPurchaseComplete={handlePurchaseComplete}
           />
         ) : (
-          <BuySell onExploreAsset={handleExploreAsset} />
+          <BuySell
+            onExploreAsset={handleExploreAsset}
+            cart={cart}
+            onAddToCart={addToCart}
+            onUpdateCartQty={updateCartQty}
+            onRemoveFromCart={removeFromCart}
+            onClearCart={clearCart}
+            onPurchaseComplete={handlePurchaseComplete}
+          />
         );
 
       // Common

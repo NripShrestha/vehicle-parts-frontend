@@ -4,7 +4,6 @@ import {
   Mail,
   Shield,
   Camera,
-  History,
   CheckCircle,
   Star,
   Award,
@@ -139,27 +138,6 @@ const Profile = ({ user }) => {
       setSubmitLoading(false);
     }
   };
-
-  const adminActivities = [
-    {
-      action: "Updated Stock Levels",
-      target: "Brake Pads (BP-101)",
-      time: "2 hours ago",
-      icon: History,
-    },
-    {
-      action: "Generated Monthly Report",
-      target: "Financials_April.pdf",
-      time: "5 hours ago",
-      icon: History,
-    },
-    {
-      action: "Approved New Vendor",
-      target: "Global Parts Inc.",
-      time: "Yesterday",
-      icon: CheckCircle,
-    },
-  ];
 
   const displayUser = {
     ...user,
@@ -461,30 +439,7 @@ const Profile = ({ user }) => {
                     Logged in as system operator for the AutoParts selling operations node. Your security clearance is elevated.
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-800 m-0 mb-4 uppercase tracking-wider">
-                        Recent Activity Log
-                      </h4>
-                      <div className="flex flex-col gap-5">
-                        {adminActivities.map((act, i) => (
-                          <div key={i} className="flex gap-4 group">
-                            <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors shadow-sm border border-slate-100 shrink-0">
-                              <act.icon size={16} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-extrabold text-slate-800 m-0">
-                                {act.action}
-                              </p>
-                              <p className="text-xs text-slate-400 font-bold m-0 mt-0.5">
-                                {act.target} • {act.time}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
+                  <div className="mt-8 max-w-md">
                     <div>
                       <h4 className="text-sm font-black text-slate-800 m-0 mb-4 uppercase tracking-wider">
                         Credentials & Access

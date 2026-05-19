@@ -145,6 +145,7 @@ export const customerSelfServiceService = {
   getReviews: () => api.get("/customer-self-service/reviews"),
   requestPart: (data) => api.post("/customer-self-service/part-requests", data),
   getPartRequests: () => api.get("/customer-self-service/part-requests"),
+  createPurchase: (data) => api.post("/customer-self-service/purchases", data),
 };
 
 export const reportService = {

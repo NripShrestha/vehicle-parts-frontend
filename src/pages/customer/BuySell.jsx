@@ -4,11 +4,19 @@ import {
   CheckCircle2,
   Filter,
   Loader2,
+  Minus,
   Package,
+  Plus,
   Search,
   ShoppingBag,
+  ShoppingCart,
+  Trash2,
+  X,
 } from "lucide-react";
-import { customerSelfServiceService, resolvePartImageUrl } from "../../services/api";
+import {
+  customerSelfServiceService,
+  resolvePartImageUrl,
+} from "../../services/api";
 
 const formatCurrency = (value = 0) =>
   `$${Number(value).toLocaleString(undefined, {
@@ -26,13 +34,26 @@ const normalizePart = (part) => ({
   imageUrl: part.imageUrl ?? part.ImageUrl ?? null,
 });
 
-const BuySell = ({ onExploreAsset }) => {
+const BuySell = ({
+  onExploreAsset,
+  cart = [],
+  onAddToCart,
+  onUpdateCartQty,
+  onRemoveFromCart,
+  onClearCart,
+  onPurchaseComplete,
+}) => {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [partRequestName, setPartRequestName] = useState("");
   const [partRequestStatus, setPartRequestStatus] = useState("");
   const [error, setError] = useState("");
+  const [showCart, setShowCart] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("Paid");
+  const [creditAmount, setCreditAmount] = useState("");
 
   const loadCatalog = async () => {
     try {
@@ -77,6 +98,13 @@ const BuySell = ({ onExploreAsset }) => {
       }));
   }, [parts, searchTerm]);
 
+  const cartSubtotal = cart.reduce(
+    (sum, item) => sum + item.sellingPrice * item.quantity,
+    0,
+  );
+  const cartDiscount = cartSubtotal > 5000 ? cartSubtotal * 0.1 : 0;
+  const cartTotal = cartSubtotal - cartDiscount;
+
   const handlePartRequest = async (event) => {
     event.preventDefault();
     if (!partRequestName.trim()) return;
@@ -94,6 +122,54 @@ const BuySell = ({ onExploreAsset }) => {
     }
   };
 
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    const normalizedCredit =
+      paymentStatus === "Partial" ? Number(creditAmount) : 0;
+
+    if (paymentStatus === "Partial") {
+      if (
+        !normalizedCredit ||
+        normalizedCredit <= 0 ||
+        normalizedCredit >= cartTotal
+      ) {
+        setError(
+          "Partial payment requires a credit amount greater than 0 and less than the order total.",
+        );
+        return;
+      }
+    }
+
+    try {
+      setCheckoutLoading(true);
+      setError("");
+      setCheckoutSuccess("");
+      const response = await customerSelfServiceService.createPurchase({
+        paymentStatus,
+        creditAmount: normalizedCredit,
+        items: cart.map((item) => ({
+          partID: item.partID,
+          quantity: item.quantity,
+        })),
+      });
+      const invoice = response.data;
+      onClearCart?.();
+      setShowCart(false);
+      setPaymentStatus("Paid");
+      setCreditAmount("");
+      setCheckoutSuccess(
+        `Order placed. Invoice INV-${String(invoice.salesInvoiceID).padStart(5, "0")} created.`,
+      );
+      onPurchaseComplete?.(invoice);
+      await loadCatalog();
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to complete checkout.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   return (
     <div className="pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
@@ -102,22 +178,39 @@ const BuySell = ({ onExploreAsset }) => {
             Marketplace
           </h2>
           <p className="text-slate-500 text-[15px] font-medium mt-2">
-            Browse parts available to buy and request items not currently in stock.
+            Browse in-stock parts, add to cart, and complete your purchase online.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={loadCatalog}
-          className="px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-text-main text-[11px] uppercase tracking-widest font-extrabold hover:bg-slate-50 transition-all shadow-sm"
-        >
-          Refresh Catalog
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setShowCart(true)}
+            className="px-6 py-3.5 bg-slate-900 text-white rounded-xl text-[11px] uppercase tracking-widest font-extrabold hover:bg-blue-600 transition-all shadow-sm flex items-center gap-2"
+          >
+            <ShoppingCart size={16} />
+            Cart ({cart.length})
+          </button>
+          <button
+            type="button"
+            onClick={loadCatalog}
+            className="px-6 py-3.5 bg-white border border-slate-200 rounded-xl text-text-main text-[11px] uppercase tracking-widest font-extrabold hover:bg-slate-50 transition-all shadow-sm"
+          >
+            Refresh Catalog
+          </button>
+        </div>
       </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-800 text-xs font-bold flex gap-2 items-center">
           <AlertCircle size={16} className="shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {checkoutSuccess && (
+        <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-xl text-green-800 text-xs font-bold flex gap-2 items-center">
+          <CheckCircle2 size={16} className="shrink-0" />
+          <span>{checkoutSuccess}</span>
         </div>
       )}
 
@@ -232,21 +325,159 @@ const BuySell = ({ onExploreAsset }) => {
                 <h3 className="m-0 text-xl font-extrabold text-slate-900 flex-1 tracking-tighter leading-tight mb-6 group-hover:text-blue-600 transition-colors">
                   {item.name}
                 </h3>
-                <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50">
+                <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-slate-50">
                   <span className="text-2xl font-extrabold text-text-main tracking-tighter">
                     {item.price}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onExploreAsset(item)}
-                    className="px-6 py-2.5 bg-text-main text-white rounded-xl text-[10px] font-extrabold uppercase tracking-widest hover:bg-blue-500 shadow-sm transition-all transform active:scale-95"
-                  >
-                    View Details
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAddToCart?.(item.source, 1)}
+                      className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-[10px] font-extrabold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1"
+                    >
+                      <ShoppingCart size={14} /> Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onExploreAsset(item)}
+                      className="flex-1 px-4 py-2.5 bg-text-main text-white rounded-xl text-[10px] font-extrabold uppercase tracking-widest hover:bg-blue-500 shadow-sm transition-all"
+                    >
+                      Details
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showCart && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg p-8 border border-slate-100 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setShowCart(false)}
+              className="absolute top-6 right-6 w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-800 bg-slate-50"
+            >
+              <X size={16} />
+            </button>
+            <h3 className="m-0 text-2xl font-black text-slate-800 mb-6 flex items-center gap-2">
+              <ShoppingBag size={22} /> Your Cart
+            </h3>
+
+            {cart.length === 0 ? (
+              <p className="text-sm font-bold text-slate-400">Your cart is empty.</p>
+            ) : (
+              <>
+                <div className="flex flex-col gap-4 mb-6">
+                  {cart.map((item) => (
+                    <div
+                      key={item.partID}
+                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="m-0 text-sm font-bold text-slate-800 truncate">
+                          {item.partName}
+                        </p>
+                        <p className="m-0 text-xs text-slate-500 font-semibold">
+                          {formatCurrency(item.sellingPrice)} each
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateCartQty?.(item.partID, item.quantity - 1)
+                          }
+                          className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="text-sm font-black w-6 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateCartQty?.(item.partID, item.quantity + 1)
+                          }
+                          className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveFromCart?.(item.partID)}
+                        className="text-slate-400 hover:text-red-500"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                  Payment Status
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(event) => setPaymentStatus(event.target.value)}
+                  className="w-full mb-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold outline-none focus:border-blue-500"
+                >
+                  <option value="Paid">Paid in full</option>
+                  <option value="Partial">Partial payment</option>
+                  <option value="Unpaid">Pay on credit</option>
+                </select>
+
+                {paymentStatus === "Partial" && (
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    max={cartTotal}
+                    value={creditAmount}
+                    onChange={(event) => setCreditAmount(event.target.value)}
+                    className="w-full mb-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold outline-none focus:border-blue-500"
+                    placeholder="Outstanding credit amount"
+                  />
+                )}
+
+                <div className="space-y-2 mb-6 text-sm font-semibold text-slate-600 border-t border-slate-100 pt-4">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(cartSubtotal)}</span>
+                  </div>
+                  {cartDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Loyalty discount</span>
+                      <span>-{formatCurrency(cartDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-black text-slate-900">
+                    <span>Total</span>
+                    <span>{formatCurrency(cartTotal)}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full py-4 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {checkoutLoading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    "Complete Purchase"
+                  )}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -254,3 +485,4 @@ const BuySell = ({ onExploreAsset }) => {
 };
 
 export default BuySell;
+

@@ -1,31 +1,109 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
-  Car,
-  ShieldCheck,
-  Zap,
-  History,
-  CreditCard,
-  Calendar,
-  MapPin,
-  Share2,
-  Heart,
-  ChevronRight,
-  Gauge,
-  Activity,
-  Fuel,
-  Settings,
-  Info,
+  CheckCircle2,
+  Loader2,
+  Minus,
+  Package,
+  Plus,
+  ShoppingCart,
 } from "lucide-react";
+import {
+  customerSelfServiceService,
+  resolvePartImageUrl,
+} from "../../services/api";
 
-const AssetDetails = ({ asset, onBack }) => {
-  if (!asset) return null;
+const formatCurrency = (value = 0) =>
+  `$${Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const AssetDetails = ({
+  asset,
+  onBack,
+  onAddToCart,
+  onPurchaseComplete,
+}) => {
+  const part = asset?.source;
+  const [quantity, setQuantity] = useState(1);
+  const [paymentStatus, setPaymentStatus] = useState("Paid");
+  const [creditAmount, setCreditAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const lineTotal = useMemo(() => {
+    if (!part) return 0;
+    return (part.sellingPrice ?? 0) * quantity;
+  }, [part, quantity]);
+
+  const loyaltyDiscount = lineTotal > 5000 ? lineTotal * 0.1 : 0;
+  const totalDue = lineTotal - loyaltyDiscount;
+
+  if (!asset || !part) return null;
+
+  const maxQuantity = part.stockQuantity ?? 0;
+  const imageUrl = asset.imageUrl || resolvePartImageUrl(part.imageUrl);
+
+  const adjustQuantity = (delta) => {
+    setQuantity((current) => {
+      const next = current + delta;
+      return Math.min(Math.max(1, next), maxQuantity);
+    });
+  };
+
+  const handleAddToCart = () => {
+    onAddToCart?.(part, quantity);
+    setSuccess(`${part.partName} added to cart.`);
+    setError("");
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const handlePurchase = async () => {
+    const normalizedCredit =
+      paymentStatus === "Partial" ? Number(creditAmount) : 0;
+
+    if (paymentStatus === "Partial") {
+      if (
+        !normalizedCredit ||
+        normalizedCredit <= 0 ||
+        normalizedCredit >= totalDue
+      ) {
+        setError(
+          "Partial payment requires a credit amount greater than 0 and less than the order total.",
+        );
+        return;
+      }
+    }
+
+    try {
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+      const response = await customerSelfServiceService.createPurchase({
+        paymentStatus,
+        creditAmount: normalizedCredit,
+        items: [{ partID: part.partID, quantity }],
+      });
+      const invoice = response.data;
+      setSuccess(
+        `Purchase complete. Invoice INV-${String(invoice.salesInvoiceID).padStart(5, "0")} created.`,
+      );
+      onPurchaseComplete?.(invoice);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to complete purchase.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="pb-20 animate-in fade-in duration-500">
-      {/* Navigation Header */}
       <div className="flex justify-between items-center mb-8">
         <button
+          type="button"
           onClick={onBack}
           className="flex items-center gap-3 text-slate-500 hover:text-blue-600 transition-all font-bold text-xs uppercase tracking-widest group"
         >
@@ -34,227 +112,168 @@ const AssetDetails = ({ asset, onBack }) => {
           </div>
           Back to Marketplace
         </button>
-        <div className="flex gap-4">
-          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all hover:bg-red-50">
-            <Heart size={18} />
-          </button>
-          <button className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all hover:bg-blue-50">
-            <Share2 size={18} />
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Media & Core Info (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col gap-8">
-          {/* Main Visual Component */}
-          <div className="bg-white rounded-[2.5rem] shadow-material overflow-hidden border border-slate-100 relative group">
-            <div className="h-[450px] bg-slate-50 flex items-center justify-center relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
-              {asset.type === "Vehicle" ? (
-                <Car size={180} className="text-slate-200" />
-              ) : (
-                <Settings size={180} className="text-slate-200" />
-              )}
-
-              <div className="absolute bottom-8 left-8 flex gap-3">
-                <span className="px-4 py-2 bg-white/80 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg border border-white/50">
-                  Exterior 360°
-                </span>
-                <span className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg border border-white/10">
-                  Interior 4K
-                </span>
-              </div>
-            </div>
-            <div className="p-10">
-              <div className="flex flex-wrap gap-3 mb-6">
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg border border-blue-100">
-                  {asset.type}
-                </span>
-                {asset.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1.5 bg-slate-100/70 text-slate-600 text-[10px] font-bold uppercase tracking-[0.15em] rounded-lg border border-slate-200/50"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <h1 className="text-4xl font-black text-text-main tracking-tighter m-0 mb-4">
-                {asset.name}
-              </h1>
-              <p className="text-lg text-slate-600 font-medium leading-relaxed max-w-2xl">
-                Precision-engineered {asset.type.toLowerCase()} featuring
-                advanced performance metrics and certified quality assurance.
-                This asset has been rigorously tested by our technical logistics
-                team.
-              </p>
-            </div>
-          </div>
-
-          {/* Technical Specs Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Transmission", val: "Electronic", icon: Gauge },
-              { label: "Fuel Type", val: "Electric", icon: Fuel },
-              { label: "Performance", val: "Tier 1", icon: Activity },
-              { label: "System Check", val: "Pass", icon: ShieldCheck },
-            ].map((spec, i) => (
-              <div
-                key={i}
-                className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-material transition-all group"
-              >
-                <spec.icon
-                  size={20}
-                  className="text-blue-500 mb-3 group-hover:scale-110 transition-transform"
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <div className="bg-white rounded-3xl shadow-material overflow-hidden border border-slate-100">
+            <div className="h-[360px] bg-slate-50 flex items-center justify-center relative">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={part.partName}
+                  className="w-full h-full object-cover"
                 />
-                <p className="m-0 text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">
-                  {spec.label}
-                </p>
-                <p className="m-0 text-sm font-black text-text-main tracking-tight">
-                  {spec.val}
-                </p>
+              ) : (
+                <Package size={120} className="text-slate-200" />
+              )}
+              <span
+                className={`absolute top-4 right-4 px-3 py-1.5 rounded-lg text-[9px] font-extrabold shadow-sm bg-white uppercase tracking-widest border ${
+                  maxQuantity > part.reorderLevel
+                    ? "text-green-500 border-green-100"
+                    : "text-orange-500 border-orange-100"
+                }`}
+              >
+                {maxQuantity > 0 ? asset.status : "Out of Stock"}
+              </span>
+            </div>
+            <div className="p-8">
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-blue-100">
+                  {part.category || "Part"}
+                </span>
+                <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest rounded-lg">
+                  ID #{part.partID}
+                </span>
+                <span className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-widest rounded-lg">
+                  Stock {maxQuantity}
+                </span>
               </div>
-            ))}
-          </div>
-
-          {/* Description / Ledger */}
-          <div className="bg-white rounded-[2rem] p-10 shadow-material border border-slate-100">
-            <h4 className="text-xl font-black text-text-main tracking-tighter mb-6 flex items-center gap-3">
-              <Info size={22} className="text-blue-500" />
-              Strategic Overview
-            </h4>
-            <div className="space-y-6">
-              <p className="text-slate-600 font-medium leading-loose text-[15px]">
-                The {asset.name} represents the pinnacle of modern automotive
-                design, integrating high-performance components with
-                cutting-edge software. Every unit in our marketplace undergoas a
-                150-point technical audit before listing.
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight m-0 mb-3">
+                {part.partName}
+              </h1>
+              <p className="text-slate-500 font-medium m-0">
+                Unit price {formatCurrency(part.sellingPrice)} · Reorder level{" "}
+                {part.reorderLevel}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
-                <div>
-                  <h5 className="text-xs font-black uppercase tracking-widest text-text-main mb-4">
-                    Core Specifications
-                  </h5>
-                  <ul className="space-y-3 p-0 m-0 list-none">
-                    <li className="flex justify-between text-sm">
-                      <span className="text-slate-500 font-bold">
-                        Certification
-                      </span>{" "}
-                      <span className="font-black text-green-600 uppercase tracking-tighter">
-                        Gold Standard
-                      </span>
-                    </li>
-                    <li className="flex justify-between text-sm">
-                      <span className="text-slate-500 font-bold">
-                        Ownership
-                      </span>{" "}
-                      <span className="font-black">Single Node</span>
-                    </li>
-                    <li className="flex justify-between text-sm">
-                      <span className="text-slate-500 font-bold">
-                        Warranty
-                      </span>{" "}
-                      <span className="font-black">24 Months</span>
-                    </li>
-                  </ul>
-                </div>
-                <div>
-                  <h5 className="text-xs font-black uppercase tracking-widest text-text-main mb-4">
-                    Security Features
-                  </h5>
-                  <ul className="space-y-3 p-0 m-0 list-none">
-                    <li className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                      <ShieldCheck size={16} className="text-blue-500" />{" "}
-                      Anti-Theft GPS Node
-                    </li>
-                    <li className="flex items-center gap-2 text-sm font-bold text-slate-600">
-                      <ShieldCheck size={16} className="text-blue-500" /> Remote
-                      Diagnostics
-                    </li>
-                  </ul>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Acquisition Hub (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-dark-gradient rounded-[2.5rem] p-10 text-white shadow-header relative overflow-hidden group border border-white/5 sticky top-28">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-1000"></div>
+        <div className="lg:col-span-5">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-material p-8 sticky top-28">
+            <h2 className="text-xl font-black text-slate-900 m-0 mb-6">
+              Purchase Part
+            </h2>
 
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-8">
-                <span className="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/10">
-                  Investment Value
-                </span>
-                <div className="flex items-center gap-1 text-blue-400">
-                  <ShieldCheck size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Insured
-                  </span>
-                </div>
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-800 text-xs font-bold flex gap-2 items-center">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{error}</span>
               </div>
+            )}
 
-              <h2 className="text-5xl font-black tracking-tighter m-0 mb-2">
-                {asset.price}
-              </h2>
-              <p className="text-xs text-white/50 font-bold uppercase tracking-widest mb-10">
-                + Registration & Logistics Fee
-              </p>
-
-              <div className="space-y-4 mb-10">
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/item">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <CreditCard size={20} className="text-blue-400" />
-                      <span className="text-sm font-extrabold uppercase tracking-widest">
-                        Financing
-                      </span>
-                    </div>
-                    <ChevronRight
-                      size={18}
-                      className="text-white/20 group-hover/item:translate-x-1 transition-transform"
-                    />
-                  </div>
-                  <p className="text-[10px] text-white/40 font-bold mt-2 leading-none uppercase">
-                    From $450/mo · 3.9% APR
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/item">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <Calendar size={20} className="text-blue-400" />
-                      <span className="text-sm font-extrabold uppercase tracking-widest">
-                        Test Drive
-                      </span>
-                    </div>
-                    <ChevronRight
-                      size={18}
-                      className="text-white/20 group-hover/item:translate-x-1 transition-transform"
-                    />
-                  </div>
-                  <p className="text-[10px] text-white/40 font-bold mt-2 leading-none uppercase">
-                    Nearest Node: Central Hub
-                  </p>
-                </div>
+            {success && (
+              <div className="mb-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-xl text-green-800 text-xs font-bold flex gap-2 items-center">
+                <CheckCircle2 size={16} className="shrink-0" />
+                <span>{success}</span>
               </div>
+            )}
 
-              <button className="w-full py-5 rounded-2xl bg-blue-500 text-white text-xs font-black uppercase tracking-[0.2em] shadow-lg hover:shadow-blue-500/40 hover:bg-white hover:text-black transition-all transform active:scale-95 mb-4">
-                Reserve Asset Now
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+              Quantity
+            </label>
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => adjustQuantity(-1)}
+                disabled={quantity <= 1}
+                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40"
+              >
+                <Minus size={16} />
               </button>
-
-              <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all transform active:scale-95">
-                Contact Strategy Team
+              <span className="text-xl font-black w-12 text-center">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => adjustQuantity(1)}
+                disabled={quantity >= maxQuantity}
+                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center disabled:opacity-40"
+              >
+                <Plus size={16} />
               </button>
+            </div>
 
-              <div className="mt-8 flex items-center justify-center gap-2 text-[10px] text-white/30 font-black uppercase tracking-widest">
-                <Zap size={14} className="text-blue-400" /> Secure Protocol v4.0
-                Enabled
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+              Payment Status
+            </label>
+            <select
+              value={paymentStatus}
+              onChange={(event) => setPaymentStatus(event.target.value)}
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold outline-none focus:border-blue-500"
+            >
+              <option value="Paid">Paid in full</option>
+              <option value="Partial">Partial payment</option>
+              <option value="Unpaid">Pay on credit</option>
+            </select>
+
+            {paymentStatus === "Partial" && (
+              <div className="mb-4">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                  Credit amount (outstanding)
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  max={totalDue}
+                  value={creditAmount}
+                  onChange={(event) => setCreditAmount(event.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold outline-none focus:border-blue-500"
+                  placeholder="Amount to bill later"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2 mb-6 text-sm font-semibold text-slate-600 border-t border-slate-100 pt-4">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{formatCurrency(lineTotal)}</span>
+              </div>
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Loyalty discount (10%)</span>
+                  <span>-{formatCurrency(loyaltyDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-lg font-black text-slate-900 pt-2 border-t border-slate-100">
+                <span>Total</span>
+                <span>{formatCurrency(totalDue)}</span>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={handlePurchase}
+              disabled={submitting || maxQuantity < 1}
+              className="w-full py-4 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all disabled:opacity-60 flex items-center justify-center gap-2 mb-3"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Processing...
+                </>
+              ) : (
+                "Buy Now"
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={maxQuantity < 1}
+              className="w-full py-3.5 rounded-xl border border-slate-200 text-slate-800 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              <ShoppingCart size={16} /> Add to Cart
+            </button>
           </div>
         </div>
       </div>
