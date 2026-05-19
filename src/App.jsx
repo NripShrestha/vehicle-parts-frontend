@@ -19,6 +19,7 @@ import CustomerDetails from "./pages/staff/CustomerDetails";
 import CustomerReports from "./pages/staff/CustomerReports";
 import EmailInvoice from "./pages/staff/EmailInvoice";
 import StaffDashboard from "./pages/staff/StaffDashboard";
+import MaintenanceBookings from "./pages/staff/MaintenanceBookings";
 
 // Customer Pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -46,6 +47,7 @@ const SCREEN_ROUTES = {
   CustomerDetails: { path: "/staff/customers/details", roles: ["staff"] },
   CustomerReports: { path: "/staff/reports", roles: ["staff"] },
   EmailInvoice: { path: "/staff/email-invoice", roles: ["staff"] },
+  MaintenanceBookings: { path: "/staff/maintenance-bookings", roles: ["staff", "admin"] },
   CustomerDash: { path: "/customer/dashboard", roles: ["customer"] },
   History: { path: "/customer/history", roles: ["customer"] },
   Appointments: { path: "/customer/appointments", roles: ["customer"] },
@@ -199,6 +201,8 @@ const App = () => {
         return <CustomerReports />;
       case "EmailInvoice":
         return <EmailInvoice />;
+      case "MaintenanceBookings":
+        return <MaintenanceBookings />;
 
       // Customer
       case "CustomerDash":

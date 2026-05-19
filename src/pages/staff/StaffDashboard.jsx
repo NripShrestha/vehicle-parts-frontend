@@ -6,6 +6,7 @@ import {
   ClipboardList,
   BarChart3,
   Mail,
+  Wrench,
   UserPlus,
   Clock,
   CheckCircle,
@@ -168,6 +169,11 @@ const StaffDashboard = ({ setActiveScreen }) => {
             title="Command Reports"
             icon={BarChart3}
             onClick={() => setActiveScreen("CustomerReports")}
+          />
+          <QuickAction
+            title="Maintenance Bookings"
+            icon={Wrench}
+            onClick={() => setActiveScreen("MaintenanceBookings")}
           />
         </div>
       </div>

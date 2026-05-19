@@ -122,7 +122,12 @@ export const purchasesService = {
   create: (data) => api.post("/Purchases", data),
 };
 
+export const appointmentService = {
+  getAll: () => api.get("/Appointments"),
+};
+
 export const customerSelfServiceService = {
+  getCatalog: () => api.get("/customer-self-service/catalog"),
   getProfile: () => api.get("/customer-self-service/profile"),
   updateProfile: (data) => api.put("/customer-self-service/profile", data),
   getHistory: () => api.get("/customer-self-service/history"),

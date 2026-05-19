@@ -24,6 +24,7 @@ const Navbar = ({ activeScreen, setActiveScreen }) => {
       CustomerDetails: "Profile Analysis",
       CustomerReports: "Strategic Insights",
       EmailInvoice: "Digital Transmission",
+      MaintenanceBookings: "Maintenance Bookings",
       CustomerDash: "Performance Overview",
       Marketplace: "Asset Marketplace",
       History: "Service Logbook",

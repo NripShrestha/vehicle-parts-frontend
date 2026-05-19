@@ -11,6 +11,7 @@ import {
   User,
   Clock,
   Calendar,
+  Wrench,
   LogOut,
   BarChart,
   Mail,
@@ -66,6 +67,7 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
     { id: "Parts", label: "Inventory", icon: Package },
     { id: "Purchases", label: "Procurement", icon: Truck },
     { id: "Vendors", label: "Suppliers", icon: Settings },
+    { id: "MaintenanceBookings", label: "Maintenance Bookings", icon: Wrench },
   ];
 
   const staffLinks = [
@@ -75,6 +77,7 @@ const Sidebar = ({ activeScreen, setActiveScreen, userRole, onLogout }) => {
     { id: "CustomerDetails", label: "Customer Profiles", icon: ClipboardList },
     { id: "CustomerReports", label: "Sales Reports", icon: BarChart },
     { id: "EmailInvoice", label: "Email Invoice", icon: Mail },
+    { id: "MaintenanceBookings", label: "Maintenance Bookings", icon: Wrench },
   ];
 
   const NavItem = ({ id, label, icon: Icon }) => (
